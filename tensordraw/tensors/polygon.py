@@ -29,14 +29,14 @@ class Polygon(BaseTensor):
         self.side_lengths = np.linalg.norm(diffs, axis = 1)
 
         self.angles = np.arccos(-np.einsum("ij,ij->i", diffs[1:], diffs[:-1])/(self.side_lengths[1:]*self.side_lengths[:-1]))
-        last_angle = np.arccos(-np.dot(diffs[0], diffs[-1])/(self.side_lengths[0]*self.side_lengths[-1]))
-        self.angles = np.concat((self.angles, [last_angle]), axis = 0) 
+        first_angle = np.arccos(-np.dot(diffs[0], diffs[-1])/(self.side_lengths[0]*self.side_lengths[-1]))
+        self.angles = np.concat(([first_angle], self.angles), axis = 0) 
 
         self.convex = np.cross(diffs[:-1], diffs[1:]) < 0
-        self.convex = np.concat((self.convex, [np.cross(diffs[-1], diffs[0]) < 0]), axis = 0)
+        self.convex = np.concat(([np.cross(diffs[-1], diffs[0]) < 0], self.convex), axis = 0)
         self.angles[self.convex] = 2*np.pi  - self.angles[self.convex]
 
-        if(np.sum(self.angles) != (len(self.side_lengths)-2)*np.pi):
+        if(np.abs(np.sum(self.angles) - (len(self.side_lengths)-2)*np.pi) > 1E-8):
             raise ValueError("The internal angles of the polygon do not properly add up")
 
         # Shift origin to the centroid
@@ -45,6 +45,8 @@ class Polygon(BaseTensor):
         self.vertices -= np.array([cx,cy])
 
         self.min_length = np.min(self.side_lengths)
+        self.diffs = diffs
+
         if 'stroke_width' not in kwargs:
             self.stroke_width = self.min_length/10
 
@@ -91,18 +93,33 @@ class Polygon(BaseTensor):
         context.fill()
         context.restore()
 
+    def _perp_dir(self, i):
+        aux_mat = np.array([[0,1],[-1,0]])
+        diff_sum = self.diffs[i]/np.linalg.norm(self.diffs[i]) + \
+                self.diffs[i-1]/np.linalg.norm(self.diffs[i-1])
+        perp_dir = aux_mat @ diff_sum
+        return perp_dir/np.linalg.norm(perp_dir)
+
+
     def draw(self, context):
-        # Outer polygon (TODO: inner transparency)
+        # Compute inner vertices
+        aux_mat = np.array([[0,-1],[1,0]])
+        n = len(self.vertices) - 1
+        perp_dir = [self._perp_dir(i) for i in range(n)]
+        h = [self.stroke_width/np.sin(self.angles[i]/2) for i in range(n)]
+        inner_vertices = [v - h[i]*perp_dir[i] for i,v in enumerate(self.vertices[:-1])]
+        inner_vertices.append(inner_vertices[0])
+
+        # Outer polygon
         context.set_source_rgba(*self.stroke_color)
         context.move_to(*self.vertices[0])
         [context.line_to(*v) for v in self.vertices[:-1]]
         context.close_path()
+        [context.line_to(*v) for v in inner_vertices[::-1]]
+        context.close_path()
         context.fill()
 
-        return 0
         # Polygon circle
-        context.set_source_rgba(*self.fill_color)
-        context.fill()
 
         #for leg in self.legs:
         #    self.draw_leg(leg, context)
