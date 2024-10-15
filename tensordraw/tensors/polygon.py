@@ -4,6 +4,7 @@ from ._base_tensor import BaseTensor
 from .leg import Leg
 from ..utils import Position
 from ..utils import rotation
+from ..utils import orientation
 
 class Polygon(BaseTensor):
     def __init__(self, vertices, **kwargs):
@@ -32,9 +33,9 @@ class Polygon(BaseTensor):
         first_angle = np.arccos(-np.dot(diffs[0], diffs[-1])/(self.side_lengths[0]*self.side_lengths[-1]))
         self.angles = np.concat(([first_angle], self.angles), axis = 0) 
 
-        self.convex = np.cross(diffs[:-1], diffs[1:]) < 0
-        self.convex = np.concat(([np.cross(diffs[-1], diffs[0]) < 0], self.convex), axis = 0)
-        self.angles[self.convex] = 2*np.pi  - self.angles[self.convex]
+        self.obtuse = np.cross(diffs[:-1], diffs[1:]) < 0
+        self.obtuse = np.concat(([np.cross(diffs[-1], diffs[0]) < 0], self.obtuse), axis = 0)
+        self.angles[self.obtuse] = 2*np.pi  - self.angles[self.obtuse]
 
         if(np.abs(np.sum(self.angles) - (len(self.side_lengths)-2)*np.pi) > 1E-8):
             raise ValueError("The internal angles of the polygon do not properly add up")
@@ -46,10 +47,12 @@ class Polygon(BaseTensor):
 
         self.min_length = np.min(self.side_lengths)
         self.diffs = diffs
+        self.diffs_dir = diffs/np.linalg.norm(diffs, axis = 1)[:,np.newaxis]
 
         if 'stroke_width' not in kwargs:
             self.stroke_width = self.min_length/10
 
+        self.corner_width =  self.min_length/10
         if 'corner_width' in kwargs:
             self.corner_width  = kwargs['corner_width']
 
@@ -110,12 +113,53 @@ class Polygon(BaseTensor):
         inner_vertices = [v - h[i]*perp_dir[i] for i,v in enumerate(self.vertices[:-1])]
         inner_vertices.append(inner_vertices[0])
 
-        # Outer polygon
+        # Outer polygon with rounded corners
         context.set_source_rgba(*self.stroke_color)
-        context.move_to(*self.vertices[0])
-        [context.line_to(*v) for v in self.vertices[:-1]]
+        context.move_to(*self.vertices[0] - self.diffs_dir[-1]*self.corner_width)
+        for i,v in enumerate(self.vertices[:-1]):
+            left = v - self.diffs_dir[i-1]*self.corner_width
+            right = v + self.diffs_dir[i]*self.corner_width
+            radius = abs(self.corner_width*np.tan(self.angles[i]/2))
+
+            perp_right_dir = np.array([-self.diffs_dir[i,1], self.diffs_dir[i,0]])
+            if(self.obtuse[i]):
+                perp_right_dir = -perp_right_dir
+            center = right + perp_right_dir*radius
+
+            end_angle = orientation(-perp_right_dir)
+            angle = np.pi - self.angles[i]
+            context.line_to(*left)
+            if(self.obtuse[i]):
+                context.arc_negative(*center, radius, end_angle - angle, end_angle)
+            else:
+                context.arc(*center, radius, end_angle - angle, end_angle)
+
         context.close_path()
-        [context.line_to(*v) for v in inner_vertices[::-1]]
+
+        inner_enum = [(i,v) for i,v in enumerate(inner_vertices[:-1])]
+        i,v = inner_enum[-1]
+        context.move_to(*v + self.diffs_dir[i]*self.corner_width)
+        for i,v in inner_enum[::-1]:
+            left = v - self.diffs_dir[i-1]*self.corner_width
+            right = v + self.diffs_dir[i]*self.corner_width
+            radius = abs(self.corner_width*np.tan(self.angles[i]/2))
+
+            perp_right_dir = np.array([-self.diffs_dir[i,1], self.diffs_dir[i,0]])
+            if(self.obtuse[i]):
+                perp_right_dir = -perp_right_dir
+            center = right + perp_right_dir*radius
+
+            end_angle = orientation(-perp_right_dir)
+            angle = np.pi - self.angles[i]
+            if(self.obtuse[i]):
+                context.arc(*center, radius, end_angle, end_angle - angle)
+            else:
+                context.arc_negative(*center, radius, end_angle, end_angle - angle)
+
+            context.line_to(*right)
+            context.line_to(*left)
+
+        #[context.line_to(*v) for v in inner_vertices[::-1]]
         context.close_path()
         context.fill()
 

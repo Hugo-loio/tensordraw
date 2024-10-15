@@ -53,3 +53,18 @@ def distance_to_hline(t, path, origin, rot_angle = 0):
 def distance_to_point(t, path, point):
     x,y = path(t)
     return np.linalg.norm(np.array([x,y]) - point)
+
+# Return the angle of the orientation of a 2D vector
+def orientation(vector):
+    if(vector[0] == 0):
+        if(vector[1] > 0):
+            return np.pi/2
+        if(vector[1] < 0):
+            return -np.pi/2
+    orientation = np.arctan(vector[1]/vector[0])
+    if(orientation < 0):
+        orientation += 2*np.pi
+    if(vector[0] < 0):
+        return orientation - np.pi
+    return orientation
+
