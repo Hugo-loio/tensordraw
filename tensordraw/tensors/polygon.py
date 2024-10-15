@@ -105,63 +105,76 @@ class Polygon(BaseTensor):
 
 
     def draw(self, context):
-        # Compute inner vertices
+        ### Compute auxilary variables
         aux_mat = np.array([[0,-1],[1,0]])
         n = len(self.vertices) - 1
         perp_dir = [self._perp_dir(i) for i in range(n)]
-        h = [self.stroke_width/np.sin(self.angles[i]/2) for i in range(n)]
+        h = np.abs(self.stroke_width/np.sin(self.angles/2))
         inner_vertices = [v - h[i]*perp_dir[i] for i,v in enumerate(self.vertices[:-1])]
         inner_vertices.append(inner_vertices[0])
+        # Raddi of the inner and outer rounded corners
+        outer_radii = np.abs(self.corner_width*np.tan(self.angles/2))
+        inner_radii = outer_radii - self.stroke_width
+        inner_radii[self.obtuse] += 2*self.stroke_width
+        no_inner_round = inner_radii <= 0
+        inner_radii[no_inner_round] = 0
+        # Inner corner width
+        inner_corner_width = np.repeat(0.0, n)
+        indices_accute = np.logical_not(np.logical_or(self.obtuse,no_inner_round))
+        inner_corner_width[indices_accute] = self.corner_width - np.sqrt(np.square(h[indices_accute]) - np.square(self.stroke_width))
+        indices_obtuse = np.logical_and(self.obtuse,np.logical_not(no_inner_round))
+        inner_corner_width[indices_obtuse] = self.corner_width + np.sqrt(np.square(h[indices_obtuse]) - np.square(self.stroke_width))
+        # Auxilary points and directions
+        perp_right_dir = self.diffs_dir @ np.array([[0,1],[-1,0]])
+        perp_right_dir[self.obtuse] = -perp_right_dir[self.obtuse]
+        right = self.vertices[:-1] + self.diffs_dir*self.corner_width
+        # Centers of the rounded corners
+        centers = right + perp_right_dir*outer_radii[:,np.newaxis]
+        # Start and end angle of the rounded corners
+        end_angles = [orientation(-direction) for direction in perp_right_dir]
+        start_angles = end_angles + self.angles - np.pi
 
-        # Outer polygon with rounded corners
+        ### Outer polygon with rounded corners
         context.set_source_rgba(*self.stroke_color)
         context.move_to(*self.vertices[0] - self.diffs_dir[-1]*self.corner_width)
         for i,v in enumerate(self.vertices[:-1]):
             left = v - self.diffs_dir[i-1]*self.corner_width
-            right = v + self.diffs_dir[i]*self.corner_width
-            radius = abs(self.corner_width*np.tan(self.angles[i]/2))
-
-            perp_right_dir = np.array([-self.diffs_dir[i,1], self.diffs_dir[i,0]])
-            if(self.obtuse[i]):
-                perp_right_dir = -perp_right_dir
-            center = right + perp_right_dir*radius
-
-            end_angle = orientation(-perp_right_dir)
-            angle = np.pi - self.angles[i]
             context.line_to(*left)
             if(self.obtuse[i]):
-                context.arc_negative(*center, radius, end_angle - angle, end_angle)
+                context.arc_negative(*centers[i], outer_radii[i], start_angles[i], end_angles[i])
             else:
-                context.arc(*center, radius, end_angle - angle, end_angle)
-
+                context.arc(*centers[i], outer_radii[i], start_angles[i], end_angles[i])
         context.close_path()
 
+        ### Inner polygon in opposite direction to fill the stroke section
         inner_enum = [(i,v) for i,v in enumerate(inner_vertices[:-1])]
         i,v = inner_enum[-1]
         context.move_to(*v + self.diffs_dir[i]*self.corner_width)
         for i,v in inner_enum[::-1]:
-            left = v - self.diffs_dir[i-1]*self.corner_width
-            right = v + self.diffs_dir[i]*self.corner_width
-            radius = abs(self.corner_width*np.tan(self.angles[i]/2))
-
-            perp_right_dir = np.array([-self.diffs_dir[i,1], self.diffs_dir[i,0]])
-            if(self.obtuse[i]):
-                perp_right_dir = -perp_right_dir
-            center = right + perp_right_dir*radius
-
-            end_angle = orientation(-perp_right_dir)
-            angle = np.pi - self.angles[i]
-            if(self.obtuse[i]):
-                context.arc(*center, radius, end_angle, end_angle - angle)
-            else:
-                context.arc_negative(*center, radius, end_angle, end_angle - angle)
-
+            right = v + self.diffs_dir[i]*inner_corner_width[i]
             context.line_to(*right)
-            context.line_to(*left)
-
-        #[context.line_to(*v) for v in inner_vertices[::-1]]
+            if(self.obtuse[i]):
+                context.arc(*centers[i], inner_radii[i], end_angles[i], start_angles[i])
+            else:
+                context.arc_negative(*centers[i], inner_radii[i], end_angles[i], start_angles[i])
         context.close_path()
         context.fill()
+
+        ### Inner polygon to fill inside
+        context.set_source_rgba(*self.fill_color)
+        i,v = inner_enum[0]
+        context.move_to(*v - self.diffs_dir[i-1]*self.corner_width)
+        for i,v in inner_enum:
+            left = v - self.diffs_dir[i-1]*inner_corner_width[i]
+            context.line_to(*left)
+            if(self.obtuse[i]):
+                context.arc_negative(*centers[i], inner_radii[i], start_angles[i], end_angles[i])
+            else:
+                context.arc(*centers[i], inner_radii[i], start_angles[i], end_angles[i])
+        context.close_path()
+        context.fill()
+
+        #[context.line_to(*v) for v in inner_vertices[::-1]]
 
         # Polygon circle
 
