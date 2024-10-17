@@ -2,24 +2,6 @@ from dataclasses import dataclass
 
 import numpy as np
 
-def rounded_rectangle(context, width, height, radius):
-    context.move_to(-width/2 + radius, -height/2)
-    # Top
-    context.line_to(width/2 - radius, -height/2)
-    context.arc(width/2 - radius, -height/2 + radius, radius, -np.pi/2, 0)
-    # Right
-    context.line_to(width/2, height/2 - radius)
-    context.arc(width/2 - radius, height/2 - radius, radius, 0, np.pi/2)
-    # Bottom
-    context.line_to(-width/2 + radius, height/2)
-    context.arc(-width/2 + radius, height/2 - radius, radius, np.pi/2, np.pi)
-    # Left
-    context.line_to(-width/2, -height/2 + radius)
-    context.arc(-width/2 + radius, -height/2 + radius, radius, np.pi, 3*np.pi/2)
-
-    context.close_path()
-    context.fill()
-
 @dataclass
 class Position:
     x : float

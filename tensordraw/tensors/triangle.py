@@ -1,15 +1,15 @@
-from ._base_tensor import BaseTensor
+from .polygon import Polygon
+from .regular_polygon import RegularPolygon
 import numpy as np
 
-class Triangle(BaseTensor):
-    def __init__(self, width, height, **kwargs):
-        super().__init__(**kwargs)
-        self._lengths = lengths
-        self._corner_radius = np.min([widht, height])/10
+class EquilateralTriangle(RegularPolygon):
+    def __init__(self, side_length, **kwargs):
+        super().__init__(3, side_length, **kwargs)
 
-    def set(self, **kwargs):
-        super().set(**kwargs)
-        if 'lengths' in kwargs:
-            self._lengths = kwargs['lengths']
-        if 'corner_radius' in kwargs:
-            self._corner_radius  = kwargs['_corner_radius']
+class IsoscelesTriangle(Polygon):
+    def __init__(self, width, height, **kwargs):
+        self.width = width
+        self.height = height
+        vertices = [[-width/2,0], [width/2,0], [0, height]]
+        super().__init__(vertices, **kwargs)
+

@@ -7,8 +7,10 @@ __all__ = [
            "StrokeStyle",
            "Circle",
            "Polygon",
+           "RegularPolygon"
+           "EquilateralTriangle",
+           "IsoscelesTriangle",
            "Rectangle",
            "Square",
            "Star",
-           "RegularPolygon",
            ]

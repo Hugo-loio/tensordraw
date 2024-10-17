@@ -17,5 +17,3 @@ class Star(Polygon):
             vertices.append(inner_rescale*rotation((2*i+1)*angle)@vtop.T)
 
         super().__init__(vertices, **kwargs)
-
-

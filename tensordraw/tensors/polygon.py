@@ -126,7 +126,6 @@ class Polygon(BaseTensor):
         start_angles = end_angles + self.angles - np.pi
 
         ### Polygon with rounded corners
-        context.set_source_rgba(*self.stroke_color)
         context.move_to(*self.vertices[0] - self.diffs_dir[-1]*self.corner_width)
         for i,v in enumerate(self.vertices[:-1]):
             left = v - self.diffs_dir[i-1]*self.corner_width
