@@ -3,23 +3,21 @@ import math
 
 import numpy as np
 
+from ..stroke_style import StrokeStyle
+
 class BaseTensor(ABC):
     def __init__(self, **kwargs):
         self.fill_color = (0,0,1,1)
-        self.stroke_color = (0,0,0,1)
-        self.stroke_width = 1
+        self.stroke_style = StrokeStyle(1)
 
         self.legs = []
 
         self.set(**kwargs)
 
     def set(self, **kwargs):
-        if 'fill_color' in kwargs:
-            self.fill_color = kwargs['fill_color']
-        if 'stroke_color' in kwargs:
-            self.stroke_color = kwargs['stroke_color']
-        if 'stroke_width' in kwargs:
-            self.stroke_width = kwargs['stroke_width']
+        for key, value in kwargs.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
 
     def leg_limtis(self, xmin, xmax, ymin, ymax, R):
         for leg in self.legs:

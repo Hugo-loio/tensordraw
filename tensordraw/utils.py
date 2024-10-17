@@ -67,4 +67,3 @@ def orientation(vector):
     if(vector[0] < 0):
         return orientation - np.pi
     return orientation
-

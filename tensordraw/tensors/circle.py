@@ -8,8 +8,8 @@ class Circle(BaseTensor):
     def __init__(self, radius, **kwargs):
         super().__init__(**kwargs)
         self.radius = radius
-        if 'stroke_width' not in kwargs:
-            self.stroke_width = radius/5
+        if 'stroke_style' not in kwargs:
+            self.stroke_style.width = radius/5
 
     def set(self, **kwargs):
         super().set(**kwargs)
@@ -32,10 +32,10 @@ class Circle(BaseTensor):
         return np.array([self.radius*np.cos(2*np.pi*t), self.radius*np.sin(2*np.pi*t)]) 
 
     def limits(self, R):
-        xmin = -self.radius
-        xmax = self.radius
-        ymin = -self.radius
-        ymax = self.radius
+        xmin = -self.radius - self.stroke_style.width/2
+        xmax = self.radius + self.stroke_style.width/2
+        ymin = -self.radius - self.stroke_style.width/2
+        ymax = self.radius + self.stroke_style.width/2
         return self.leg_limtis(xmin, xmax, ymin, ymax, R)
 
     def draw_leg(self, leg, context):
@@ -49,7 +49,7 @@ class Circle(BaseTensor):
         angleright = np.arccos(right[0]/self.radius)
         if(right[1] < 0):
             angleright = -angleright
-        context.arc(0, 0, self.radius - 0.01*self.stroke_width, angleright, angleleft)
+        context.arc(0, 0, self.radius, angleright, angleleft)
         context.line_to(*leg.tipleft())
         context.line_to(*leg.tipright())
         context.close_path()
@@ -57,16 +57,10 @@ class Circle(BaseTensor):
         context.restore()
 
     def draw(self, context):
-        # Outer circle
-        context.set_source_rgba(*self.stroke_color)
         context.arc(0, 0, self.radius, 0, 2*np.pi)
-        # Hollow interior due to Cairo's winding rule
-        context.arc_negative(0, 0, self.radius - self.stroke_width, 0, -2*np.pi)
-        context.fill()
-        # Inner circle
         context.set_source_rgba(*self.fill_color)
-        context.arc(0, 0, self.radius - self.stroke_width, 0, 2*np.pi)
-        context.fill()
+        context.fill_preserve()
+        self.stroke_style.stroke(context)
 
         for leg in self.legs:
             self.draw_leg(leg, context)

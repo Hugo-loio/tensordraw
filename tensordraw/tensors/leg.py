@@ -11,8 +11,8 @@ class Leg():
         self.parent = parent
         self.tip_position = tip_position
 
-        self.width = parent.stroke_width
-        self.color = parent.stroke_color
+        self.width = parent.stroke_style.width
+        self.color = parent.stroke_style.color
         self.set(**kwargs)
 
     def set(self, **kwargs):

@@ -62,5 +62,17 @@ class Figure():
         context.translate(0, window_height)  
         context.scale(1, -1)  
 
+        #Auxilary_lines
+        context.move_to(0,0)
+        context.set_source_rgba(1,0,0)
+        context.set_line_width(window_height/100)
+        context.line_to(window_width, 0)
+        context.stroke()
+        context.move_to(0,window_height)
+        context.set_source_rgba(0,0,1)
+        context.set_line_width(window_height/100)
+        context.line_to(window_width, window_height)
+        context.stroke()
+
         for i,obj in enumerate(self.objects):
             self.draw_obj(obj, self.positions[i], context)
