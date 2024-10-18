@@ -58,8 +58,8 @@ class Circle(BaseTensor):
 
     def draw(self, context):
         context.arc(0, 0, self.radius, 0, 2*np.pi)
-        context.set_source_rgba(*self.fill_color)
-        context.fill_preserve()
+
+        self.fill_style.fill_preserve(context)
         self.stroke_style.stroke(context)
 
         for leg in self.legs:
