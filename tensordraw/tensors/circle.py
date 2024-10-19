@@ -8,8 +8,8 @@ class Circle(BaseTensor):
     def __init__(self, radius, **kwargs):
         super().__init__(**kwargs)
         self.radius = radius
-        if 'stroke_style' not in kwargs:
-            self.stroke_style.width = radius/5
+        if self.stroke_style.default['width']:
+            self.stroke_style.set(width = radius/5)
 
     def set(self, **kwargs):
         super().set(**kwargs)

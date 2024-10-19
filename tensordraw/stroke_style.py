@@ -1,13 +1,12 @@
 class StrokeStyle():
-    def __init__(self, width, **kwargs):
-        self.width = width
-
+    def __init__(self, **kwargs):
         #Default values
+        self.width = 1
         self.color = (0,0,0,1)
         self.dashed = False
-        self.dash_pattern = [2*width, width]
+        self.dash_pattern = [2*self.width, self.width]
         self.squiggly = False
-        # TODO: implement dashing
+        self.default = {key : True for key in self.__dict__.keys()}
 
         self.set(**kwargs)
 
@@ -15,6 +14,7 @@ class StrokeStyle():
         for key, value in kwargs.items():
             if hasattr(self, key):
                 setattr(self, key, value)
+                self.default[key] = False
 
 
     def stroke(self, context):

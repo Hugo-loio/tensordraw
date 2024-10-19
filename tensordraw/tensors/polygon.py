@@ -49,8 +49,8 @@ class Polygon(BaseTensor):
         self.diffs = diffs
         self.diffs_dir = diffs/np.linalg.norm(diffs, axis = 1)[:,np.newaxis]
 
-        if 'stroke_style' not in kwargs:
-            self.stroke_style.width = self.min_length/10
+        if self.stroke_style.default['width']:
+            self.stroke_style.set(width = self.min_length/10)
 
         self.corner_width =  self.min_length/10
         if 'corner_width' in kwargs:

@@ -8,14 +8,18 @@ from ..fill_style import FillStyle
 
 class BaseTensor(ABC):
     def __init__(self, **kwargs):
-        self.fill_style = FillStyle(color = (0,0,1,1))
-        self.stroke_style = StrokeStyle(1)
+        self.fill_style = FillStyle()
+        self.stroke_style = StrokeStyle()
 
         self.legs = []
 
         self.set(**kwargs)
 
     def set(self, **kwargs):
+        if 'ss' in kwargs:
+            kwargs['stroke_style'] = kwargs['ss']
+        if 'fs' in kwargs:
+            kwargs['fill_style'] = kwargs['fs']
         for key, value in kwargs.items():
             if hasattr(self, key):
                 setattr(self, key, value)
