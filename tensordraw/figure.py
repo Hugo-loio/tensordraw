@@ -51,7 +51,8 @@ class Figure():
         window_height = self.window[3] - self.window[2]
         window_ratio = window_width/window_height
 
-        fig_height = fig_width/window_ratio
+        fig_height = np.ceil(fig_width/window_ratio)
+        padding = np.floor(2*padding)/2
         surface = cairo.PDFSurface(path, fig_width + 2*padding, fig_height + 2*padding)
         context = cairo.Context(surface)
 
@@ -66,12 +67,18 @@ class Figure():
         context.move_to(0,0)
         context.set_source_rgba(1,0,0)
         context.set_line_width(window_height/100)
-        context.line_to(window_width, 0)
+        context.line_to(window_width,0)
         context.stroke()
         context.move_to(0,window_height)
         context.set_source_rgba(0,0,1)
-        context.set_line_width(window_height/100)
-        context.line_to(window_width, window_height)
+        context.line_to(window_width,window_height)
+        context.stroke()
+        context.move_to(0,0)
+        context.set_source_rgba(0,1,0)
+        context.line_to(0,window_height)
+        context.stroke()
+        context.move_to(window_width,0)
+        context.line_to(window_width,window_height)
         context.stroke()
 
         for i,obj in enumerate(self.objects):
