@@ -11,11 +11,6 @@ class Circle(BaseTensor):
         if self.stroke_style.default['width']:
             self.stroke_style.set(width = radius/5)
 
-    def set(self, **kwargs):
-        super().set(**kwargs)
-        if 'radius' in kwargs:
-            self.radius = kwargs['radius']
-
     def perimeter(self):
         return 2*np.pi*self.radius
 
@@ -38,10 +33,7 @@ class Circle(BaseTensor):
         ymax = self.radius + self.stroke_style.width/2
         return self.leg_limtis(xmin, xmax, ymin, ymax, R)
 
-    def draw_leg(self, leg, context):
-        context.set_source_rgba(*leg.color)
-        context.save()
-        tleft, tright = leg.intersections()
+    def path_leg_intersection(self, context, tleft, tright):
         left, right = self.path(tleft), self.path(tright)
         angleleft = np.arccos(left[0]/self.radius)
         if(left[1] < 0):
@@ -50,17 +42,11 @@ class Circle(BaseTensor):
         if(right[1] < 0):
             angleright = -angleright
         context.arc(0, 0, self.radius, angleright, angleleft)
-        context.line_to(*leg.tipleft())
-        context.line_to(*leg.tipright())
-        context.close_path()
-        context.fill()
-        context.restore()
 
     def draw(self, context):
         context.arc(0, 0, self.radius, 0, 2*np.pi)
 
-        self.fill_style.fill_preserve(context)
-        self.stroke_style.stroke(context)
+        self.stroke_and_fill(context)
 
         for leg in self.legs:
-            self.draw_leg(leg, context)
+            leg.draw(context)

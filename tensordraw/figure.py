@@ -23,9 +23,10 @@ class Figure():
         ymin = y + limits[2]
         ymax = y + limits[3]
         if(len(self.window) == 0):
-            self.window = [xmin, xmax, ymin, ymax]
+            self.window = np.array([xmin, xmax, ymin, ymax])
         else:
             self._update_window(xmin, xmax, ymin, ymax)
+        print(self.window)
 
     def _update_window(self, xmin, xmax, ymin, ymax):
         self.window[0] = np.min([self.window[0], xmin])

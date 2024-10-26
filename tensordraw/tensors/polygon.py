@@ -19,7 +19,7 @@ class Polygon(BaseTensor):
         y = vertices[:,1]
 
         self.area = 0.5 * np.sum(x[:-1]*y[1:] - x[1:]*y[:-1])
-        # Correct vertices in clockwise direction
+        # Force vertices in clockwise direction
         if(self.area < 0):
             self.area = -self.area
             self.vertices = self.vertices[::-1]
@@ -51,13 +51,15 @@ class Polygon(BaseTensor):
         self.diffs = diffs
         self.diffs_dir = diffs/np.linalg.norm(diffs, axis = 1)[:,np.newaxis]
 
+        self.corner_width = self.min_length/10
+
         super().__init__(**kwargs)
 
         if self.stroke_style.default['width']:
             self.stroke_style.set(width = self.min_length/10)
 
         if 'corner_width' not in kwargs:
-            self.corner_width =  self.min_length/10
+            #self.corner_width =  self.min_length/10
             self._compute_rounded_corners()
 
 
@@ -83,7 +85,6 @@ class Polygon(BaseTensor):
     def set(self, **kwargs):
         super().set(**kwargs)
         if 'corner_width' in kwargs:
-            self.corner_width = kwargs['corner_width']
             self._compute_rounded_corners()
 
     def perimeter(self):
@@ -108,7 +109,7 @@ class Polygon(BaseTensor):
             r = self.corner_radii[side_number]
             c = self.corner_centers[side_number]
             return c + r*np.array([np.cos(angle), np.sin(angle)])
-        elif(t < 1 - delta):
+        elif(t <= 1 - delta):
             t = (t - delta)/(1 - 2*delta)
             point_t0 = self.corner_ends[side_number]
             point_t1 = self.corner_starts[(side_number + 1) % self.nsides]
@@ -123,34 +124,6 @@ class Polygon(BaseTensor):
             c = self.corner_centers[index]
             return c + r*np.array([np.cos(angle), np.sin(angle)])
 
-    #def perimeter(self):
-
-    def limits(self, R):
-        points = np.array([R @ self.path(t) for t in np.linspace(0,1,200*self.nsides)])
-        xmin = np.min(points[:,0]) - self.stroke_style.width/2
-        xmax = np.max(points[:,0]) + self.stroke_style.width/2
-        ymin = np.min(points[:,1]) - self.stroke_style.width/2
-        ymax = np.max(points[:,1]) + self.stroke_style.width/2
-        return self.leg_limtis(xmin, xmax, ymin, ymax, R)
-
-    def draw_leg(self, leg, context):
-        context.set_source_rgba(*leg.color)
-        context.save()
-        tleft, tright = leg.intersections()
-        left, right = self.path(tleft), self.path(tright)
-        angleleft = np.arccos(left[0]/self.radius)
-        if(left[1] < 0):
-            angleleft = -angleleft
-        angleright = np.arccos(right[0]/self.radius)
-        if(right[1] < 0):
-            angleright = -angleright
-        context.arc(0, 0, self.radius - 0.01*self.stroke_width, angleright, angleleft)
-        context.line_to(*leg.tipleft())
-        context.line_to(*leg.tipright())
-        context.close_path()
-        context.fill()
-        context.restore()
-
     # This function was used for testing the path function
     def draw_from_path(self, context):
         ss = deepcopy(self.stroke_style)
@@ -162,25 +135,102 @@ class Polygon(BaseTensor):
         context.close_path()
         ss.stroke(context)
 
+
+    def limits(self, R):
+        points = np.array([R @ self.path(t) for t in np.linspace(0,1,200*self.nsides)])
+        # Only works if corner_radius != 0 
+        xmin = np.min(points[:,0]) - self.stroke_style.width/2
+        xmax = np.max(points[:,0]) + self.stroke_style.width/2
+        ymin = np.min(points[:,1]) - self.stroke_style.width/2
+        ymax = np.max(points[:,1]) + self.stroke_style.width/2
+        # TODO: Fix this
+        #print(self.vertices)
+        #print(xmin,xmax,ymin,ymax)
+        return self.leg_limtis(xmin, xmax, ymin, ymax, R)
+
+    def _path_rounded_corner(self, context, index, start_angle, end_angle):
+        if(self.obtuse[index]):
+            context.arc_negative(*self.corner_centers[index], 
+                                 self.corner_radii[index], 
+                                 start_angle, 
+                                 end_angle)
+        else:
+            context.arc(*self.corner_centers[index],
+                        self.corner_radii[index], 
+                        start_angle, 
+                        end_angle)
+
     def draw(self, context):
         ### Polygon with rounded corners
         context.move_to(*self.corner_starts[0])
         for i,v in enumerate(self.vertices[:-1]):
             context.line_to(*self.corner_starts[i])
-            if(self.obtuse[i]):
-                context.arc_negative(*self.corner_centers[i], 
-                                     self.corner_radii[i], 
-                                     self.corner_start_angles[i], 
-                                     self.corner_end_angles[i])
-            else:
-                context.arc(*self.corner_centers[i], 
-                            self.corner_radii[i], 
-                            self.corner_start_angles[i], 
-                            self.corner_end_angles[i])
+            self._path_rounded_corner(context, i, self.corner_start_angles[i], self.corner_end_angles[i])
         context.close_path()
 
-        self.fill_style.fill_preserve(context)
-        self.stroke_style.stroke(context)
+        self.stroke_and_fill(context)
 
-        #for leg in self.legs:
-        #    self.draw_leg(leg, context)
+        for leg in self.legs:
+            leg.draw(context)
+
+    def _path_segment(context, side_number, segment, tstart = 0, tend = 1):
+        match segment:
+            case 0:
+                start_angle = angle_t0 = self.corner_mid_angles[side_number]
+                end_angle = angle_t1 = self.corner_end_angles[side_number]
+                if(tstart > 0):
+                    start_angle = angle_t0 + tstart*(angle_t1 - angle_t0)
+                if(tend < 1):
+                    end_angle = angle_t0 + tend*(angle_t1 - angle_t0)
+                self._path_rounded_corner(context, side_number, start_angle, end_angle)
+            case 1:
+                start_point = point_t0 = self.corner_ends[side_number]
+                end_point = point_t1 = self.corner_starts[(side_number + 1) % self.nsides]
+                if(tstart > 0):
+                    start_point = point_t0 + tstart*(point_t1 - point_t0)
+                if(tend < 1):
+                    end_point = point_t0 + tend*(point_t1 - point_t0)
+                context.move_to(*start_point)
+                context.line_to(*end_point)
+            case 2:
+                index = (side_number + 1) % self.nsides
+                start_angle = angle_t0 = self.corner_start_angles[index]
+                end_angle = angle_t1 = self.corner_mid_angles[index]
+                if(tstart > 0):
+                    start_angle = angle_t0 + tstart*(angle_t1 - angle_t0)
+                if(tend < 1):
+                    end_angle = angle_t0 + tend*(angle_t1 - angle_t0)
+                self._path_rounded_corner(context, side_number, start_angle, end_angle)
+
+    def path_leg_intersection(self, context, tleft, tright):
+        ts = np.array([tleft, tright])*self.nsides
+        side_numbers = (ts).astype(int)
+        side_numbers[side_numbers == self.nsides] -= 1
+        ts -= side_numbers
+        deltas = self.corner_width/self.side_lengths[side_numbers]
+        segments = (ts <= 1 - deltas)*1 + (ts > 1 - delta)*2
+
+        for i in range(2):
+            match segments[i]:
+                case 0:
+                    ts[i] = ts[i]/deltas[i]
+                case 1:
+                    ts[i] = (ts[i] - deltas[i])/(1-2*deltas[i])
+                case 2:
+                    ts[i] = (ts[i] - (1-deltas[i]))/(1-deltas[i])
+
+        side_segment_stop = np.array([side_numbers[0], segments[0], 0])
+        count = 0
+        while(side_segment_stop[-1] == 0):
+            tstart = 0 + (count == 0)*ts[0]
+            tend = 1
+            if(side_segment[0] == side_numbers[1] and side_segment[1] == segments[1]):
+                tend = ts[1]
+                side_segment_stop[-1] = 1
+
+            self._path_segment(context, *side_segment_stop[0:1], tstart, tend)
+
+            side_segment_stop[1] = (side_segment_stop[1] + 1) % 3
+            if(side_segment[1] == 0):
+                side_segment[0] += 1 
+            count += 1

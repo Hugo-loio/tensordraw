@@ -1,28 +1,17 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 import math
 
 import numpy as np
 
 from ..stroke_style import StrokeStyle
 from ..fill_style import FillStyle
+from .._drawable import Drawable
 
-class BaseTensor(ABC):
+class BaseTensor(Drawable):
     def __init__(self, **kwargs):
-        self.fill_style = FillStyle()
-        self.stroke_style = StrokeStyle()
-
         self.legs = []
 
-        self.set(**kwargs)
-
-    def set(self, **kwargs):
-        if 'ss' in kwargs:
-            kwargs['stroke_style'] = kwargs['ss']
-        if 'fs' in kwargs:
-            kwargs['fill_style'] = kwargs['fs']
-        for key, value in kwargs.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
+        super().__init__(**kwargs)
 
     def leg_limtis(self, xmin, xmax, ymin, ymax, R):
         for leg in self.legs:
@@ -35,11 +24,6 @@ class BaseTensor(ABC):
         return [xmin, xmax, ymin, ymax]
 
     @abstractmethod
-    def perimeter(self):
-        # Include default perimeter by integrating the path
-        pass
-
-    @abstractmethod
     # Parametric path (t in [0,1]) for the boundary of the tensor
     def path(self, t):
         pass
@@ -50,13 +34,9 @@ class BaseTensor(ABC):
         pass
 
     @abstractmethod
-    def draw(self, context):
-        pass
-
-    @abstractmethod
     def add_leg(self):
         pass
 
     #@abstractmethod
-    #def draw_legs(self):
+    #def path_leg_intersection(self, context, tleft, tright):
     #    pass
