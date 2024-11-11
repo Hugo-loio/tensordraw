@@ -49,3 +49,6 @@ def orientation(vector):
     if(vector[0] < 0):
         return orientation - np.pi
     return orientation
+
+def gradient(path, t, h):
+    return (path(t+h) - path(t-h))/(2*h)

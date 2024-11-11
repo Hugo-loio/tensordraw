@@ -3,6 +3,7 @@ import numpy as np
 from ._base_tensor import BaseTensor
 from .leg import Leg
 from ..utils import Position
+from ..utils import rotation
 
 class Circle(BaseTensor):
     def __init__(self, radius, **kwargs):
@@ -16,12 +17,15 @@ class Circle(BaseTensor):
 
     def add_leg(self, angle, tilt = 0, **kwargs):
         if 'length' in kwargs:
-            length = kwargs['length'] + self.radius
+            length = kwargs['length'] 
         else:
-            length = (4/3)*self.radius 
+            length = self.radius/3
 
-        tip_position = Position(np.cos(angle)*length, np.sin(angle)*length, angle - tilt)
-        self.legs.append(Leg(self, tip_position, **kwargs))
+        leg_dir = rotation(angle + tilt) @ np.array([1,0])
+        base_point = self.path(angle/(2*np.pi))
+
+        tip_position = Position(*(base_point + length*leg_dir), angle + tilt)
+        self.legs.append(Leg(self, tip_position, base_point, **kwargs))
 
     def path(self, t):
         return np.array([self.radius*np.cos(2*np.pi*t), self.radius*np.sin(2*np.pi*t)]) 
@@ -34,14 +38,7 @@ class Circle(BaseTensor):
         return self.leg_limtis(xmin, xmax, ymin, ymax, R)
 
     def path_leg_intersection(self, context, tleft, tright):
-        left, right = self.path(tleft), self.path(tright)
-        angleleft = np.arccos(left[0]/self.radius)
-        if(left[1] < 0):
-            angleleft = -angleleft
-        angleright = np.arccos(right[0]/self.radius)
-        if(right[1] < 0):
-            angleright = -angleright
-        context.arc(0, 0, self.radius, angleright, angleleft)
+        context.arc(0, 0, self.radius, 2*np.pi*tright, 2*np.pi*tleft)
 
     def draw(self, context):
         context.arc(0, 0, self.radius, 0, 2*np.pi)

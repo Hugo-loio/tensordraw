@@ -6,8 +6,9 @@ import numpy as np
 from ._base_tensor import BaseTensor
 from .leg import Leg
 from ..utils import Position
-from ..utils import rotation
 from ..utils import orientation
+from ..utils import gradient
+from ..utils import rotation
 
 class Polygon(BaseTensor):
     def __init__(self, vertices, **kwargs):
@@ -26,6 +27,7 @@ class Polygon(BaseTensor):
             x = self.vertices[:,0]
             y = self.vertices[:,1]
 
+        # Side i in between vertex i and i+1
         diffs = self.vertices[1:] - self.vertices[:-1]
 
         self.side_lengths = np.linalg.norm(diffs, axis = 1)
@@ -87,11 +89,24 @@ class Polygon(BaseTensor):
         if 'corner_width' in kwargs:
             self._compute_rounded_corners()
 
-    def perimeter(self):
-        return 2*np.pi*self.radius
+    #def perimeter(self):
+    #    return 2*np.pi*self.radius
 
-    def add_leg(self, angle, tilt = 0, **kwargs):
-        return 0
+    def add_leg(self, side, side_pos = 0.5, tilt = 0, **kwargs):
+        h = 1E-5*self.side_lengths[side]
+        t = (side + side_pos)/self.nsides
+        # Rotate gradient -90 degrees + tilt for the leg direction
+        grad = gradient(self.path, t, h)
+        perp_dir = rotation(-np.pi/2 + tilt) @ grad/np.linalg.norm(grad) 
+        angle = orientation(perp_dir)
+
+        if 'length' in kwargs:
+            length = kwargs['length'] 
+        else:
+            length = self.min_length/3
+
+        tip_position = Position(*(self.path(t) + perp_dir*length), angle)
+        self.legs.append(Leg(self, tip_position, self.path(t), **kwargs))
 
     def path(self, t, side_number = -1):
         # Side i in between vertex i and i+1
@@ -138,14 +153,20 @@ class Polygon(BaseTensor):
 
     def limits(self, R):
         points = np.array([R @ self.path(t) for t in np.linspace(0,1,200*self.nsides)])
-        # Only works if corner_radius != 0 
         xmin = np.min(points[:,0]) - self.stroke_style.width/2
         xmax = np.max(points[:,0]) + self.stroke_style.width/2
         ymin = np.min(points[:,1]) - self.stroke_style.width/2
         ymax = np.max(points[:,1]) + self.stroke_style.width/2
-        # TODO: Fix this
-        #print(self.vertices)
-        #print(xmin,xmax,ymin,ymax)
+        if(self.corner_width == 0):
+            for i in np.arange(self.nsides)[np.logical_not(self.obtuse)]:
+                vertex_dir = rotation(-np.pi/2) @ (self.diffs_dir[i-1] + self.diffs_dir[i])
+                vertex_dir = vertex_dir/np.linalg.norm(vertex_dir)
+                h = self.stroke_style.width/np.sin(self.angles[i]/2)
+                x,y = self.vertices[i] + h*vertex_dir/2
+                xmin = np.min([xmin, x])
+                xmax = np.max([xmax, x])
+                ymin = np.min([ymin, y])
+                ymax = np.max([ymax, y])
         return self.leg_limtis(xmin, xmax, ymin, ymax, R)
 
     def _path_rounded_corner(self, context, index, start_angle, end_angle):
@@ -173,42 +194,39 @@ class Polygon(BaseTensor):
         for leg in self.legs:
             leg.draw(context)
 
-    def _path_segment(context, side_number, segment, tstart = 0, tend = 1):
+    '''
+    TODO: improove the leg intersection drawing 
+
+    def _path_segment(self, context, side_number, segment, tstart = 0, tend = 1):
         match segment:
             case 0:
-                start_angle = angle_t0 = self.corner_mid_angles[side_number]
-                end_angle = angle_t1 = self.corner_end_angles[side_number]
-                if(tstart > 0):
-                    start_angle = angle_t0 + tstart*(angle_t1 - angle_t0)
-                if(tend < 1):
-                    end_angle = angle_t0 + tend*(angle_t1 - angle_t0)
+                angle_t0 = self.corner_mid_angles[side_number]
+                angle_t1 = self.corner_end_angles[side_number]
+                start_angle = angle_t0 + tstart*(angle_t1 - angle_t0)
+                end_angle = angle_t0 + tend*(angle_t1 - angle_t0)
                 self._path_rounded_corner(context, side_number, start_angle, end_angle)
             case 1:
-                start_point = point_t0 = self.corner_ends[side_number]
-                end_point = point_t1 = self.corner_starts[(side_number + 1) % self.nsides]
-                if(tstart > 0):
-                    start_point = point_t0 + tstart*(point_t1 - point_t0)
-                if(tend < 1):
-                    end_point = point_t0 + tend*(point_t1 - point_t0)
-                context.move_to(*start_point)
+                point_t0 = self.corner_ends[side_number]
+                point_t1 = self.corner_starts[(side_number + 1) % self.nsides]
+                start_point = point_t0 + tstart*(point_t1 - point_t0)
+                end_point = point_t0 + tend*(point_t1 - point_t0)
                 context.line_to(*end_point)
             case 2:
                 index = (side_number + 1) % self.nsides
-                start_angle = angle_t0 = self.corner_start_angles[index]
-                end_angle = angle_t1 = self.corner_mid_angles[index]
-                if(tstart > 0):
-                    start_angle = angle_t0 + tstart*(angle_t1 - angle_t0)
-                if(tend < 1):
-                    end_angle = angle_t0 + tend*(angle_t1 - angle_t0)
+                angle_t0 = self.corner_start_angles[index]
+                angle_t1 = self.corner_mid_angles[index]
+                start_angle = angle_t0 + tstart*(angle_t1 - angle_t0)
+                end_angle = angle_t0 + tend*(angle_t1 - angle_t0)
                 self._path_rounded_corner(context, side_number, start_angle, end_angle)
 
     def path_leg_intersection(self, context, tleft, tright):
-        ts = np.array([tleft, tright])*self.nsides
+        self.easy_path_leg_intersection(context, tleft, tright)
+        ts = np.array([tright, tleft])*self.nsides
         side_numbers = (ts).astype(int)
         side_numbers[side_numbers == self.nsides] -= 1
         ts -= side_numbers
         deltas = self.corner_width/self.side_lengths[side_numbers]
-        segments = (ts <= 1 - deltas)*1 + (ts > 1 - delta)*2
+        segments = np.logical_and(ts > deltas, ts <= 1 - deltas)*1 + (ts > 1 - deltas)*2 
 
         for i in range(2):
             match segments[i]:
@@ -217,20 +235,23 @@ class Polygon(BaseTensor):
                 case 1:
                     ts[i] = (ts[i] - deltas[i])/(1-2*deltas[i])
                 case 2:
-                    ts[i] = (ts[i] - (1-deltas[i]))/(1-deltas[i])
+                    ts[i] = (ts[i] - (1-deltas[i]))/deltas[i]
+
+        context.move_to(*self.path(ts[0], side_numbers[0]))
 
         side_segment_stop = np.array([side_numbers[0], segments[0], 0])
         count = 0
         while(side_segment_stop[-1] == 0):
             tstart = 0 + (count == 0)*ts[0]
             tend = 1
-            if(side_segment[0] == side_numbers[1] and side_segment[1] == segments[1]):
+            if(side_segment_stop[0] == side_numbers[1] and side_segment_stop[1] == segments[1]):
                 tend = ts[1]
                 side_segment_stop[-1] = 1
 
             self._path_segment(context, *side_segment_stop[0:1], tstart, tend)
 
             side_segment_stop[1] = (side_segment_stop[1] + 1) % 3
-            if(side_segment[1] == 0):
-                side_segment[0] += 1 
+            if(side_segment_stop[1] == 0):
+                side_segment_stop[0] += 1 
             count += 1
+            '''

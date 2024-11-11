@@ -23,6 +23,12 @@ class BaseTensor(Drawable):
             ymax = np.max([left[1], right[1], ymax])
         return [xmin, xmax, ymin, ymax]
 
+    def path_leg_intersection(self, context, tleft, tright):
+        ts = np.linspace(tright, tleft, 100)
+        context.move_to(*self.path(ts[0]))
+        for t in ts[1:]:
+            context.line_to(*self.path(t))
+
     @abstractmethod
     # Parametric path (t in [0,1]) for the boundary of the tensor
     def path(self, t):
@@ -37,6 +43,3 @@ class BaseTensor(Drawable):
     def add_leg(self):
         pass
 
-    #@abstractmethod
-    #def path_leg_intersection(self, context, tleft, tright):
-    #    pass
