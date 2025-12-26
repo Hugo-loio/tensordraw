@@ -47,7 +47,26 @@ class Figure():
 
         context.restore()
 
-    def export(self, path, fig_width = 400, padding = 4):
+    def _draw_boundary(self, context, window_height, window_width):
+        context.move_to(0,0)
+        context.set_source_rgba(1,0,0)
+        context.set_line_width(window_height/100)
+        context.line_to(window_width,0)
+        context.stroke()
+        context.move_to(0,window_height)
+        context.set_source_rgba(0,0,1)
+        context.line_to(window_width,window_height)
+        context.stroke()
+        context.move_to(0,0)
+        context.set_source_rgba(0,1,0)
+        context.line_to(0,window_height)
+        context.stroke()
+        context.move_to(window_width,0)
+        context.set_source_rgba(1,0.7,0)
+        context.line_to(window_width,window_height)
+        context.stroke()
+
+    def export(self, path, fig_width = 400, padding = 4, **kwargs):
         window_width = self.window[1] - self.window[0]
         window_height = self.window[3] - self.window[2]
         window_ratio = window_width/window_height
@@ -64,23 +83,8 @@ class Figure():
         context.translate(0, window_height)  
         context.scale(1, -1)  
 
-        #Auxilary_lines
-        context.move_to(0,0)
-        context.set_source_rgba(1,0,0)
-        context.set_line_width(window_height/100)
-        context.line_to(window_width,0)
-        context.stroke()
-        context.move_to(0,window_height)
-        context.set_source_rgba(0,0,1)
-        context.line_to(window_width,window_height)
-        context.stroke()
-        context.move_to(0,0)
-        context.set_source_rgba(0,1,0)
-        context.line_to(0,window_height)
-        context.stroke()
-        context.move_to(window_width,0)
-        context.line_to(window_width,window_height)
-        context.stroke()
+        if kwargs.get('show_boundary', False):
+            self._draw_boundary(context, window_height, window_width)
 
         for i,obj in enumerate(self.objects):
             self.draw_obj(obj, self.positions[i], context)

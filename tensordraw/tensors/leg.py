@@ -72,8 +72,10 @@ class Leg(Drawable):
         return tleft, tright
 
     '''
-        IDEA: a better minimization method to improve resolution
+        TODO: a better minimization method to improve resolution
         Find the global minimum once with an error and then perform the same algorithm within that error
+        If there are simple equations for each of the path segments of the tensors then the intersection points could be found analytically
+        For now we have something that works so let's rather leave this for later
     '''
 
     def draw(self, context):
