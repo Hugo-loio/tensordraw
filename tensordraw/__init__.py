@@ -9,6 +9,7 @@ __all__ = [
            "FillStyle",
            "Circle",
            "Polygon",
+           "HoledPolygon",
            "RegularPolygon"
            "EquilateralTriangle",
            "IsoscelesTriangle",

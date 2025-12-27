@@ -2,19 +2,6 @@ import numpy as np
 
 import tensordraw as td
 
-def convert_logo(input_pdf, output_png):
-    # Convert PDF page to a list of PIL Image objects
-    # 300 DPI is standard for high quality
-    images = convert_from_path(input_pdf, dpi=300, transparent=True)
-
-    # Assuming the logo is on the first page
-    if images:
-        images[0].save(output_png, 'PNG')
-        print(f"Success! Saved to {output_png}")
-
-if __name__ == "__main__":
-    convert_logo('examples/logo.pdf', 'examples/logo.png')
-
 # This script generates the logo of tensordraw
 # Each letter is a tensor (polygon class) 
 # (doing this is not the purpose of the library but it just goes
@@ -88,6 +75,7 @@ tensorss = td.StrokeStyle(width = 0.05, dashed = False)
 kwargs = {
         'stroke_style' : tensorss,
         'corner_width' : 0.05,
+        'center' : False
         }
 
 blue = td.FillStyle(color = (0,0,1))
@@ -99,19 +87,19 @@ purple = td.FillStyle(color = (0.58,0,1))
 teal = td.FillStyle(color = (0,1,0.89))
 transparent = td.FillStyle(color = (0,0,0,0))
 
-t_tensor = td.Polygon(t_vertices, **kwargs, fs = blue, center = False)
-e_tensor = td.Polygon(e_vertices, **kwargs, fs = yellow, center = False)
-n_tensor = td.Polygon(n_vertices, **kwargs, fs = teal, center = False)
-s_tensor = td.Polygon(s_vertices, **kwargs, fs = purple, center = False)
-o_tensor_out = td.Polygon(o_outer_vertices, **kwargs, fs = green, center = False)
-o_tensor_in = td.Polygon(o_inner_vertices, **kwargs, center = False, operator = "clear")
-r_tensor_out = td.Polygon(r_outer_vertices, **kwargs, fs = red, center = False)
-r_tensor_in = td.Polygon(r_inner_vertices, **kwargs, center = False, operator = "clear")
-d_tensor_out = td.Polygon(d_outer_vertices, **kwargs, fs = green, center = False)
-d_tensor_in = td.Polygon(d_inner_vertices, **kwargs, center = False, operator = "clear")
-a_tensor_out = td.Polygon(a_outer_vertices, **kwargs, fs = orange, center = False)
-a_tensor_in = td.Polygon(a_inner_vertices, **kwargs, center = False, operator = "clear")
-w_tensor = td.Polygon(w_vertices, **kwargs, fs = blue, center = False)
+t_tensor = td.Polygon(t_vertices, **kwargs, fs = blue)
+e_tensor = td.Polygon(e_vertices, **kwargs, fs = yellow)
+n_tensor = td.Polygon(n_vertices, **kwargs, fs = teal)
+s_tensor = td.Polygon(s_vertices, **kwargs, fs = purple)
+o_tensor = td.HoledPolygon(o_outer_vertices, **kwargs, fs = green)
+o_tensor.add_hole(o_inner_vertices, center = False)
+r_tensor = td.HoledPolygon(r_outer_vertices, **kwargs, fs = red)
+r_tensor.add_hole(r_inner_vertices, center = False)
+d_tensor = td.HoledPolygon(d_outer_vertices, **kwargs, fs = green)
+d_tensor.add_hole(d_inner_vertices, center = False)
+a_tensor = td.HoledPolygon(a_outer_vertices, **kwargs, fs = orange)
+a_tensor.add_hole(a_inner_vertices, center = False)
+w_tensor = td.Polygon(w_vertices, **kwargs, fs = blue)
 
 hs = 0.1 # Horizontal spacing
 vs = 0.2 # Vertical spacing
@@ -126,23 +114,12 @@ fig.place(t_tensor, 0, 0)
 fig.place(e_tensor, (cw + hs), 0)
 fig.place(n_tensor, 2*(cw + hs), 0)
 fig.place(s_tensor, 3*(cw + hs), 0)
-fig.place(o_tensor_out, 4*(cw + hs), 0)
-fig.place(o_tensor_in, 4*(cw + hs), 0)
-fig.place(r_tensor_out, 5*(cw + hs), 0)
-fig.place(r_tensor_in, 5*(cw + hs), 0)
+fig.place(o_tensor, 4*(cw + hs), 0)
+fig.place(r_tensor, 5*(cw + hs), 0)
 
-fig.place(d_tensor_out, tw/2-bw/2, -(ch + vs))
-fig.place(d_tensor_in, tw/2-bw/2, -(ch + vs))
-fig.place(r_tensor_out, tw/2-bw/2 + (cw + hs), -(ch + vs))
-fig.place(r_tensor_in, tw/2-bw/2 + (cw + hs), -(ch + vs))
-fig.place(a_tensor_out, tw/2-bw/2 + 2*cw + hs + hs_ra, -(ch + vs))
-fig.place(a_tensor_in, tw/2-bw/2 + 2*cw + hs + hs_ra, -(ch + vs))
+fig.place(d_tensor, tw/2-bw/2, -(ch + vs))
+fig.place(r_tensor, tw/2-bw/2 + (cw + hs), -(ch + vs))
+fig.place(a_tensor, tw/2-bw/2 + 2*cw + hs + hs_ra, -(ch + vs))
 fig.place(w_tensor, tw/2-bw/2 + 3*cw + hs + hs_ra + hs_aw, -(ch + vs))
-#fig.place(star, 0.6, 0, orientation = 0)
-#fig.place(pentagon, 1.2, 0, orientation = np.pi/4)
-#fig.place(rectangle, 1.8, 0, orientation = np.pi/3)
-#fig.place(square, 0, 0.6, orientation = np.pi/3)
-#fig.place(eqtriangle, 0.6, 0.54, orientation = 0)
-#fig.place(isotriangle, 1.2, 0.54, orientation = 0)
 
-fig.export("logo.pdf", padding = 4)
+fig.export("logo.svg", padding = 4)

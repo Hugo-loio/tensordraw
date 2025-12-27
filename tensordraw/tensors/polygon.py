@@ -182,7 +182,7 @@ class Polygon(BaseTensor):
                         start_angle, 
                         end_angle)
 
-    def draw(self, context):
+    def cairo_path(self, context):
         ### Polygon with rounded corners
         context.move_to(*self.corner_starts[0])
         for i,v in enumerate(self.vertices[:-1]):
@@ -190,6 +190,8 @@ class Polygon(BaseTensor):
             self._path_rounded_corner(context, i, self.corner_start_angles[i], self.corner_end_angles[i])
         context.close_path()
 
+    def draw(self, context):
+        self.cairo_path(context)
         self.stroke_and_fill(context)
 
         for leg in self.legs:

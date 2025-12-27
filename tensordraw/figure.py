@@ -1,3 +1,5 @@
+import os
+
 import cairo
 import numpy as np
 
@@ -66,6 +68,22 @@ class Figure():
         context.line_to(window_width,window_height)
         context.stroke()
 
+    def _surface(self, path, fig_width, fig_height, padding):
+        ext = os.path.splitext(path)[1].lower()
+
+        if ext == ".svg":
+            return cairo.SVGSurface(path, fig_width + 2*padding, 
+                                    fig_height + 2*padding)
+        
+        elif ext == ".pdf":
+            return cairo.PDFSurface(path, fig_width + 2*padding, 
+                                    fig_height + 2*padding)
+        elif ext in [".ps", ".eps"]:
+            return cairo.PSSurface(path, fig_width + 2*padding,
+                                   fig_height + 2*padding)
+        else:
+            raise ValueError(f"Unsupported format '{ext}'")
+
     def export(self, path, fig_width = 400, padding = 4, **kwargs):
         window_width = self.window[1] - self.window[0]
         window_height = self.window[3] - self.window[2]
@@ -73,7 +91,7 @@ class Figure():
 
         fig_height = np.ceil(fig_width/window_ratio)
         padding = np.floor(2*padding)/2
-        surface = cairo.PDFSurface(path, fig_width + 2*padding, fig_height + 2*padding)
+        surface = self._surface(path, fig_width, fig_height, padding)
         context = cairo.Context(surface)
 
         context.translate(padding, padding)  
@@ -83,7 +101,7 @@ class Figure():
         context.translate(0, window_height)  
         context.scale(1, -1)  
 
-        context.push_group()
+        #context.push_group()
 
         if kwargs.get('show_boundary', False):
             self._draw_boundary(context, window_height, window_width)
@@ -91,5 +109,6 @@ class Figure():
         for i,obj in enumerate(self.objects):
             self.draw_obj(obj, self.positions[i], context)
 
-        context.pop_group_to_source()
-        context.paint()
+        #context.pop_group_to_source()
+        #context.paint()
+        surface.finish()

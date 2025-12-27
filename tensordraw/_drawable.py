@@ -9,7 +9,7 @@ class Drawable(ABC):
     def __init__(self, **kwargs):
         self.fill_style = FillStyle()
         self.stroke_style = StrokeStyle()
-        self.operator = "over"
+        self.operator = "over" # Use of operator not recommended, might break vectorized objects
 
         self.set(**kwargs)
 
