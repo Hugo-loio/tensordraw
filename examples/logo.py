@@ -2,6 +2,19 @@ import numpy as np
 
 import tensordraw as td
 
+def convert_logo(input_pdf, output_png):
+    # Convert PDF page to a list of PIL Image objects
+    # 300 DPI is standard for high quality
+    images = convert_from_path(input_pdf, dpi=300, transparent=True)
+
+    # Assuming the logo is on the first page
+    if images:
+        images[0].save(output_png, 'PNG')
+        print(f"Success! Saved to {output_png}")
+
+if __name__ == "__main__":
+    convert_logo('examples/logo.pdf', 'examples/logo.png')
+
 # This script generates the logo of tensordraw
 # Each letter is a tensor (polygon class) 
 # (doing this is not the purpose of the library but it just goes
