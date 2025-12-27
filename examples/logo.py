@@ -4,6 +4,8 @@ import tensordraw as td
 
 # This script generates the logo of tensordraw
 # Each letter is a tensor (polygon class) 
+# (doing this is not the purpose of the library but it just goes
+# to show that there are endless possibilities of what you can create)
 
 cw = 1 # Character width
 ch = 1 # Character height
@@ -23,8 +25,11 @@ e_vertices = [[-cw/2,0], [cw/2,0], [cw/2,sw], [inner_x,sw],
               [inner_x,2*sw+gap], [inner_x,ch-sw],[cw/2,ch-sw], 
               [cw/2,ch], [-cw/2,ch]]
               
-n_vertices = [[-cw/2, 0], [-cw/2, ch], [cw/2, ch], [cw/2, 0], [cw/2 - sw, 0],
-              [cw/2 - sw, ch-sw], [-cw/2 + sw, ch-sw], [-cw/2 + sw, 0]]
+vw = 1.6*sw # Vertical width of the diagonal part
+n_vertices = [[-cw/2, 0], [-cw/2, ch], [-cw/2+sw, ch], [cw/2-sw,vw],
+              [cw/2-sw,ch], [cw/2,ch], [cw/2,0], [cw/2-sw,0], 
+              [-cw/2+sw,ch-vw], [-cw/2+sw,0]]
+
 
 s_vertices = [[-cw/2,0],[cw/2,0], [cw/2,ch/2+sw/2], 
               [-cw/2+sw,ch/2+sw/2], [-cw/2+sw,ch-sw], [cw/2,ch-sw],
@@ -35,8 +40,8 @@ o_outer_vertices = [[-cw/2, 0], [-cw/2, ch], [cw/2, ch], [cw/2, 0]]
 o_inner_vertices = [[-cw/2+sw, sw], [cw/2-sw, sw], 
                     [cw/2-sw, ch-sw], [-cw/2+sw, ch-sw]]
 
-r_vertices = [[-cw/2,0], [-cw/2,ch], [cw/2,ch], 
-              [cw/2,ch-sw], [-cw/2+sw,ch-sw], [-cw/2+sw,0]]
+r_outer_vertices = [[-cw/2,0], [-cw/2,ch], [cw/2,ch], 
+                    [cw/2,ch-sw], [-cw/2+sw,ch-sw], [-cw/2+sw,0]]
 
 a_outer_vertices = [[-cw/2, 0], [-cw/2, ch], [cw/2, ch], [cw/2, 0]]
 a_inner_vertices = [[-cw/2+sw, sw], [cw/2-sw, sw], [cw/2-sw, ch-sw], [-cw/2+sw, ch-sw]]
@@ -56,12 +61,14 @@ green = td.FillStyle(color = (0.004, 0.851, 0))
 yellow = td.FillStyle(color = (1,1,0))
 orange = td.FillStyle(color = (0.949, 0.573, 0.098))
 red = td.FillStyle(color = (1,0,0))
+transparent = td.FillStyle(color = (0,0,0,0))
 
 t_tensor = td.Polygon(t_vertices, **kwargs, fs = blue, center = False)
 e_tensor = td.Polygon(e_vertices, **kwargs, fs = green, center = False)
 n_tensor = td.Polygon(n_vertices, **kwargs, fs = orange, center = False)
 s_tensor = td.Polygon(s_vertices, **kwargs, fs = red, center = False)
-o_tensor = td.Polygon(t_vertices, **kwargs, fs = blue, center = False)
+o_tensor_out = td.Polygon(o_outer_vertices, **kwargs, fs = blue, center = False)
+o_tensor_in = td.Polygon(o_inner_vertices, **kwargs, fs = transparent, center = False, operator = "clear")
 r_tensor = td.Polygon(r_vertices, **kwargs, fs = blue, center = False)
 d_tensor = td.Polygon(t_vertices, **kwargs, fs = blue, center = False)
 a_tensor = td.Polygon(t_vertices, **kwargs, fs = blue, center = False)
@@ -76,7 +83,8 @@ fig.place(t_tensor, 0, 0)
 fig.place(e_tensor, (cw + hs), 0)
 fig.place(n_tensor, 2*(cw + hs), 0)
 fig.place(s_tensor, 3*(cw + hs), 0)
-fig.place(o_tensor, 4*(cw + hs), 0)
+fig.place(o_tensor_out, 4*(cw + hs), 0)
+fig.place(o_tensor_in, 4*(cw + hs), 0)
 fig.place(r_tensor, 5*(cw + hs), 0)
 fig.place(d_tensor, (cw + hs), -(ch + vs))
 fig.place(r_tensor, 2*(cw + hs), -(ch + vs))

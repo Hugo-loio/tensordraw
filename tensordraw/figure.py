@@ -83,8 +83,13 @@ class Figure():
         context.translate(0, window_height)  
         context.scale(1, -1)  
 
+        context.push_group()
+
         if kwargs.get('show_boundary', False):
             self._draw_boundary(context, window_height, window_width)
 
         for i,obj in enumerate(self.objects):
             self.draw_obj(obj, self.positions[i], context)
+
+        context.pop_group_to_source()
+        context.paint()
