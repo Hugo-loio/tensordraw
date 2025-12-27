@@ -122,4 +122,5 @@ fig.place(r_tensor, tw/2-bw/2 + (cw + hs), -(ch + vs))
 fig.place(a_tensor, tw/2-bw/2 + 2*cw + hs + hs_ra, -(ch + vs))
 fig.place(w_tensor, tw/2-bw/2 + 3*cw + hs + hs_ra + hs_aw, -(ch + vs))
 
-fig.export("logo.svg", padding = 4)
+fig.export("logo.pdf", padding = 4)
+fig.export("logo.svg", padding = 0)

@@ -3,6 +3,9 @@ import numpy as np
 
 from .polygon import Polygon
 
+# TODO: add_hole from a polygon object
+# TODO: HoledCircle
+
 class HoledPolygon(Polygon):
     def __init__(self, vertices, **kwargs):
         super().__init__(vertices, **kwargs)
