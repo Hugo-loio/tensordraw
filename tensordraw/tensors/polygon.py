@@ -4,7 +4,7 @@ from copy import deepcopy
 import numpy as np
 
 from ._base_tensor import BaseTensor
-from .leg import Leg
+from ..leg import Leg
 from ..utils import Position
 from ..utils import orientation
 from ..utils import gradient
@@ -62,7 +62,6 @@ class Polygon(BaseTensor):
             self.stroke_style.set(width = self.min_length/10)
 
         if 'corner_width' not in kwargs:
-            #self.corner_width =  self.min_length/10
             self._compute_rounded_corners()
 
 
@@ -108,6 +107,8 @@ class Polygon(BaseTensor):
 
         tip_position = Position(*(self.path(t) + perp_dir*length), angle)
         self.legs.append(Leg(self, tip_position, self.path(t), **kwargs))
+
+        return len(self.legs) - 1
 
     def path(self, t, side_number = -1):
         # Side i in between vertex i and i+1

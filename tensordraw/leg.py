@@ -3,9 +3,9 @@ from scipy.optimize import minimize
 from scipy.optimize import shgo
 from scipy.signal import argrelmin
 
-from ..utils import distance_to_hline
-from ..utils import distance_to_point
-from .._drawable import Drawable
+from .utils import distance_to_hline
+from .utils import distance_to_point
+from ._drawable import Drawable
 
 class Leg(Drawable):
     def __init__(self, parent, tip_position, base_point, res = 1000, **kwargs):
@@ -18,7 +18,7 @@ class Leg(Drawable):
 
         self.intersections = self._compute_intersections(res)
 
-        if self.fill_style.default['color']:
+        if self.fill_style.default['_color']:
             self.fill_style.set(color = parent.stroke_style.color)
         if self.stroke_style.default['width']:
             self.stroke_style.set(width = 0)

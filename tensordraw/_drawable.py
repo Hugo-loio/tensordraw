@@ -22,6 +22,14 @@ class Drawable(ABC):
             if hasattr(self, key):
                 setattr(self, key, value)
 
+        if 'fc' in kwargs: kwargs['fillcolor'] = kwargs['fc']
+        if 'fillcolor' in kwargs:
+            self.fill_style.set(color = kwargs['fillcolor'])
+
+        if 'sw' in kwargs: kwargs['strokewidth'] = kwargs['sw']
+        if 'strokewidth' in kwargs:
+            self.stroke_style.set(width = kwargs['strokewidth'])
+
     @abstractmethod
     def draw(self, context):
         pass

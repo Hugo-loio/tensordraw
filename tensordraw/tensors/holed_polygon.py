@@ -5,6 +5,7 @@ from .polygon import Polygon
 
 # TODO: add_hole from a polygon object
 # TODO: HoledCircle
+# TODO: Check if hole is inside polygon?
 
 class HoledPolygon(Polygon):
     def __init__(self, vertices, **kwargs):

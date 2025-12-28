@@ -1,7 +1,7 @@
 import numpy as np
 
 from ._base_tensor import BaseTensor
-from .leg import Leg
+from ..leg import Leg
 from ..utils import Position
 from ..utils import rotation
 
@@ -19,13 +19,15 @@ class Circle(BaseTensor):
         if 'length' in kwargs:
             length = kwargs['length'] 
         else:
-            length = self.radius/3
+            length = 2*self.radius/3
 
         leg_dir = rotation(angle + tilt) @ np.array([1,0])
         base_point = self.path(angle/(2*np.pi))
 
         tip_position = Position(*(base_point + length*leg_dir), angle + tilt)
         self.legs.append(Leg(self, tip_position, base_point, **kwargs))
+
+        return len(self.legs) - 1
 
     def path(self, t):
         return np.array([self.radius*np.cos(2*np.pi*t), self.radius*np.sin(2*np.pi*t)]) 

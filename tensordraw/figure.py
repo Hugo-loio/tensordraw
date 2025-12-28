@@ -4,7 +4,9 @@ import cairo
 import numpy as np
 
 from .utils import Position
+from .utils import pos_to_point
 from .utils import rotation
+from .contraction import Contraction
 
 class Figure():
     def __init__(self):
@@ -28,7 +30,30 @@ class Figure():
             self.window = np.array([xmin, xmax, ymin, ymax])
         else:
             self._update_window(xmin, xmax, ymin, ymax)
-        #print(self.window)
+
+        return len(self.objects) - 1
+
+    def contract(self, tensor1_idx, leg1_idx, tensor2_idx, leg2_idx, **kwargs):
+        leg1 = self.objects[tensor1_idx].legs[leg1_idx]
+        R1 = rotation(self.positions[tensor1_idx].orientation)
+        p1 = pos_to_point(self.positions[tensor1_idx])
+        leg1_base = p1 + R1 @ leg1.base_point
+        leg1_tip = p1 + R1 @ pos_to_point(leg1.tip_position)
+
+        leg2 = self.objects[tensor2_idx].legs[leg2_idx]
+        R2 = rotation(self.positions[tensor2_idx].orientation)
+        p2 = pos_to_point(self.positions[tensor2_idx])
+        leg2_base = p2 + R2 @ leg2.base_point
+        leg2_tip = p2 + R2 @ pos_to_point(leg2.tip_position)
+
+        if not (('sw' in kwargs) or ('strokewidth' in kwargs)):
+            kwargs['strokewidth'] = np.max([leg1.width, leg2.width])
+
+        self.contractions.append(Contraction(self, leg1_base, leg1_tip, 
+                                             leg2_tip, leg2_base, **kwargs))
+
+        self._update_window(*self.contractions[-1].limits())
+        return self.contractions[-1]
 
     def _update_window(self, xmin, xmax, ymin, ymax):
         self.window[0] = np.min([self.window[0], xmin])
@@ -48,6 +73,8 @@ class Figure():
         obj.draw(context)
 
         context.restore()
+
+    #def draw_contraction(self, contraction, context)
 
     def _draw_boundary(self, context, window_height, window_width):
         context.move_to(0,0)
@@ -108,6 +135,12 @@ class Figure():
 
         for i,obj in enumerate(self.objects):
             self.draw_obj(obj, self.positions[i], context)
+
+        context.save()
+        context.translate(-self.window[0], -self.window[2])
+        for contraction in self.contractions:
+            contraction.draw(context)
+        context.restore()
 
         #context.pop_group_to_source()
         #context.paint()

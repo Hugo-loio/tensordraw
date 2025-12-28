@@ -10,9 +10,16 @@ Development of the project is ongoing, but it currently features:
 2. Tensors legs (indices) in any direction
 3. Customizing stroke and filling styles for all objects
 4. Output in a vectorized format (supports PDF, SVG, PS, and EPS)
+5. Automatic tensor contractions
 
 To be added:
 
-1. Automatic tensor contractions
-2. Latex integration
-3. More advanced filling and stroking styles
+1. Latex integration
+2. More advanced filling and stroking styles
+3. Documentation
+
+# User guide
+
+To install the developement version (for the moment the only version) run `./install.sh` and uninstall with `./unistall.sh`.
+
+Example scripts for using the package can be found in the `examples` directory.

@@ -14,6 +14,9 @@ class Position:
         orientation = self.orientation + other.orientation
         return Position(x, y, orientation)
 
+def pos_to_point(position):
+    return np.array([position.x, position.y])
+
 def rotation(theta):
     return np.array([[np.cos(theta), -np.sin(theta)],[np.sin(theta), np.cos(theta)]])
 
