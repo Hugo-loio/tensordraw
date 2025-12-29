@@ -19,11 +19,11 @@ class Contraction(Drawable):
         self.points.append(leg2_tip)                 # final curve point
         self.points.append(leg2_base + 0.9*dir_leg2) # final straight point
 
-        if 'control_dist' in kwargs:
+        if 'handle_lengths' in kwargs:
             dir_leg1 /= np.linalg.norm(dir_leg1)
             dir_leg2 /= np.linalg.norm(dir_leg2)
-            self.points[2] = leg1_tip + kwargs['control_dist'] * dir_leg1
-            self.points[3] = leg2_tip + kwargs['control_dist'] * dir_leg2
+            self.points[2] = leg1_tip + kwargs['handle_lengths'][0] * dir_leg1
+            self.points[3] = leg2_tip + kwargs['handle_lengths'][1] * dir_leg2
 
         super().__init__(**kwargs)
 
