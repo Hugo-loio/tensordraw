@@ -12,16 +12,18 @@ class Contraction(Drawable):
         dir_leg2 = leg2_tip - leg2_base
 
         self.points = []
-        self.points.append(leg1_tip - 0.01*dir_leg1) # initial point
+        self.points.append(leg1_base + 0.9*dir_leg1) # initial straight point
+        self.points.append(leg1_tip)                 # initial curve point
         self.points.append(leg1_tip + dir_leg1)      # initial control point
         self.points.append(leg2_tip + dir_leg2)      # final control point
-        self.points.append(leg2_tip - 0.01*dir_leg2) # final point
+        self.points.append(leg2_tip)                 # final curve point
+        self.points.append(leg2_base + 0.9*dir_leg2) # final straight point
 
         if 'control_dist' in kwargs:
             dir_leg1 /= np.linalg.norm(dir_leg1)
             dir_leg2 /= np.linalg.norm(dir_leg2)
-            self.points[1] = leg1_tip + kwargs['control_dist'] * dir_leg1
-            self.points[2] = leg2_tip + kwargs['control_dist'] * dir_leg2
+            self.points[2] = leg1_tip + kwargs['control_dist'] * dir_leg1
+            self.points[3] = leg2_tip + kwargs['control_dist'] * dir_leg2
 
         super().__init__(**kwargs)
 
@@ -47,9 +49,11 @@ class Contraction(Drawable):
 
     def cairo_path(self, context):
         context.move_to(*self.points[0])
-        for i in range(1, len(self.points)-2, 3):
+        context.line_to(*self.points[1])
+        for i in range(2, len(self.points)-3, 3):
             context.curve_to(*self.points[i], *self.points[i+1], 
                              *self.points[i+2])
+        context.line_to(*self.points[-1])
 
     def limits(self):
         surface = cairo.ImageSurface(cairo.FORMAT_A8, 0, 0)
