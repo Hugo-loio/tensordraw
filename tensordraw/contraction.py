@@ -27,23 +27,30 @@ class Contraction(Drawable):
 
         super().__init__(**kwargs)
 
-    def add_point(self, point, control_before = None, control_after = None):
+    def add_point(self, point, control_before = None, 
+                  control_after = None, **kwargs):
         point = np.array(point)
         if (control_before is None) and (control_after is None):
-            dist_before = np.linalg.norm(point - self.points[-4])
-            dist_after = np.linalg.norm(point - self.points[-1])
+            dist_before = np.linalg.norm(point - self.points[-5])
+            dist_after = np.linalg.norm(point - self.points[-2])
             k = dist_before / (dist_before + dist_after)
-            control_before = point + (1-k)*self.points[-4]/2 - \
-                    k*self.points[-1]/2 
+            control_before = point + (1-k)*self.points[-5]/2 - \
+                    k*self.points[-2]/2 
             control_after = 2*point - control_before
         elif control_before is None:
             control_before = 2*point - control_after
         elif control_after is None:
             control_after = 2*point - control_before
 
-        self.points.insert(-2, control_before)
-        self.points.insert(-2, point)
-        self.points.insert(-2, control_after)
+        if 'handle_lengths' in kwargs:
+            k = kwargs['handle_lengths'][0]/np.linalg.norm(point-control_before)
+            control_before = k * (control_before - point) + point
+            k = kwargs['handle_lengths'][1]/np.linalg.norm(point-control_after)
+            control_after = k * (control_after - point) + point
+
+        self.points.insert(-3, control_before)
+        self.points.insert(-3, point)
+        self.points.insert(-3, control_after)
 
         self.fig._update_window(*self.limits())
 

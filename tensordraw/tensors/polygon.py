@@ -94,7 +94,7 @@ class Polygon(BaseTensor):
 
     def add_leg(self, side, side_pos = 0.5, tilt = 0, **kwargs):
         h = 1E-5*self.side_lengths[side]
-        t = (side + side_pos)/self.nsides
+        t = (side % self.nsides + side_pos)/self.nsides
         # Rotate gradient -90 degrees + tilt for the leg direction
         grad = gradient(self.path, t, h)
         perp_dir = rotation(-np.pi/2 + tilt) @ grad/np.linalg.norm(grad) 

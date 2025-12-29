@@ -1,11 +1,14 @@
+from copy import deepcopy
+
 import numpy as np
 
 import tensordraw as td
 
 # This script generates the logo of tensordraw
-# Each letter is a tensor (polygon class) 
-# (doing this is not the purpose of the library but it just goes
-# to show that the possibilities for creating diagrams are endless)
+# Each letter is a tensor (Polygon or HoledPolygon class) 
+# (doing this is not the purpose of the library, and it is quite
+# laborious to define each letter in this way, but it highlights
+# the versatility of this tool)
 
 cw = 1 # Character width
 ch = 1 # Character height
@@ -71,36 +74,55 @@ w_vertices = [[-cw/2,ch], [-cw/2+bw,ch],  [-cw/2+bw+(cw-3*bw)/4, ch-ih],
               [cw/2,ch], [2*bw+2*(cw-2*bw)/3-cw/2,0], [bw+2*(cw-2*bw)/3-cw/2,0],
               [0, ih], [-cw/2+bw+(cw-2*bw)/3,0], [-cw/2+(cw-2*bw)/3,0]]
 
-tensorss = td.StrokeStyle(width = 0.05, dashed = False)
+tensorss = td.StrokeStyle(width = 0.06, dashed = False)
 kwargs = {
         'stroke_style' : tensorss,
         'corner_width' : 0.05,
         'center' : False
         }
 
-blue = td.FillStyle(color = (0,0,1))
-green = td.FillStyle(color = (0,0.72,0.08))
-yellow = td.FillStyle(color = (1,1,0))
-orange = td.FillStyle(color = (0.949, 0.573, 0.098))
-red = td.FillStyle(color = (1,0,0))
-purple = td.FillStyle(color = (0.58,0,1))
-teal = td.FillStyle(color = (0,1,0.89))
-transparent = td.FillStyle(color = (0,0,0,0))
-
-t_tensor = td.Polygon(t_vertices, **kwargs, fs = blue)
-e_tensor = td.Polygon(e_vertices, **kwargs, fs = yellow)
-n_tensor = td.Polygon(n_vertices, **kwargs, fs = teal)
-s_tensor = td.Polygon(s_vertices, **kwargs, fs = purple)
-o_tensor = td.HoledPolygon(o_outer_vertices, **kwargs, fs = green)
+#Create the tensor objects
+t_tensor = td.Polygon(t_vertices, **kwargs, fc = 'blue')
+e_tensor = td.Polygon(e_vertices, **kwargs, fc = 'yellow')
+n_tensor = td.Polygon(n_vertices, **kwargs, fc = 'teal')
+s_tensor = td.Polygon(s_vertices, **kwargs, fc = 'purple')
+o_tensor = td.HoledPolygon(o_outer_vertices, **kwargs, fc = 'green')
 o_tensor.add_hole(o_inner_vertices, center = False)
-r_tensor = td.HoledPolygon(r_outer_vertices, **kwargs, fs = red)
-r_tensor.add_hole(r_inner_vertices, center = False)
-d_tensor = td.HoledPolygon(d_outer_vertices, **kwargs, fs = green)
+r1_tensor = td.HoledPolygon(r_outer_vertices, **kwargs, fc = 'red')
+r1_tensor.add_hole(r_inner_vertices, center = False)
+d_tensor = td.HoledPolygon(d_outer_vertices, **kwargs, fc = 'green')
 d_tensor.add_hole(d_inner_vertices, center = False)
-a_tensor = td.HoledPolygon(a_outer_vertices, **kwargs, fs = orange)
+r2_tensor = deepcopy(r1_tensor)
+a_tensor = td.HoledPolygon(a_outer_vertices, **kwargs, fc = 'orange')
 a_tensor.add_hole(a_inner_vertices, center = False)
-w_tensor = td.Polygon(w_vertices, **kwargs, fs = blue)
+w_tensor = td.Polygon(w_vertices, **kwargs, fc = 'blue')
 
+#Add legs to the tensors
+l_open = 0.2 # Lenght of open legs
+l_cont = 0.05 # Lenght of contracted legs
+t_tensor.add_leg(0, length = l_cont)
+t_tensor.add_leg(4, length = l_open)
+t_tensor.add_leg(4, 0.2, length = l_open)
+t_tensor.add_leg(4, 0.8, length = l_open)
+e_tensor.add_leg(10, length = l_cont)
+n_tensor.add_leg(7, length = l_cont)
+n_tensor.add_leg(6, 0.3, length = l_cont)
+s_tensor.add_leg(6, length = l_cont)
+s_tensor.add_leg(0, 0.2, length = l_cont)
+o_tensor.add_leg(0, length = l_cont)
+o_tensor.add_leg(2, length = l_cont)
+r1_tensor.add_leg(-2, length = l_cont)
+r1_tensor.add_leg(-3, length = l_open)
+r1_tensor.add_leg(4, length = l_cont)
+d_tensor.add_leg(-1, length = l_cont)
+d_tensor.add_leg(3, 0.7, length = l_cont)
+r2_tensor.add_leg(8, 0.3, length = l_cont)
+a_tensor.add_leg(-1, 0.1, length = l_cont)
+w_tensor.add_leg(5, 0.7, length = l_cont)
+w_tensor.add_leg(5, 0.3, length = l_open)
+w_tensor.add_leg(9, length = l_cont)
+
+# Auxilary lengths
 hs = 0.1 # Horizontal spacing
 vs = 0.2 # Vertical spacing
 hs_ra = 0.05 # Vertical spacing between R and A
@@ -115,12 +137,23 @@ fig.place(e_tensor, (cw + hs), 0)
 fig.place(n_tensor, 2*(cw + hs), 0)
 fig.place(s_tensor, 3*(cw + hs), 0)
 fig.place(o_tensor, 4*(cw + hs), 0)
-fig.place(r_tensor, 5*(cw + hs), 0)
+fig.place(r1_tensor, 5*(cw + hs), 0)
 
 fig.place(d_tensor, tw/2-bw/2, -(ch + vs))
-fig.place(r_tensor, tw/2-bw/2 + (cw + hs), -(ch + vs))
+fig.place(r2_tensor, tw/2-bw/2 + (cw + hs), -(ch + vs))
 fig.place(a_tensor, tw/2-bw/2 + 2*cw + hs + hs_ra, -(ch + vs))
 fig.place(w_tensor, tw/2-bw/2 + 3*cw + hs + hs_ra + hs_aw, -(ch + vs))
+
+c1 = fig.contract(1,0,3,0, handle_lengths=[0.2,0.2])
+c1.add_point((2.0*(cw+hs), 1.1*(ch+vs)))
+fig.contract(2,0,2,1)
+fig.contract(0,0,6,0, handle_lengths=[0.4,0.4])
+fig.contract(3,1,7,0, handle_lengths=[0.1,0.05])
+c2 = fig.contract(6,1,8,0, handle_lengths=[0.3,0.07])
+c2.add_point((2.3*(cw+hs), -0.08*(ch+vs)), handle_lengths = [0.1,0.3])
+fig.contract(9,2,4,0)
+fig.contract(4,1,5,0, handle_lengths=[0.3,0.3])
+fig.contract(5,2,9,0, handle_lengths=[0.3,0.7])
 
 fig.export("logo.pdf", padding = 4)
 fig.export("logo.svg", padding = 0)
