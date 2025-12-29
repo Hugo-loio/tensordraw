@@ -14,6 +14,5 @@ fig = td.Figure()
 t1 = fig.place(matrix, 0, 0)
 t2 = fig.place(vector, 2, 0)
 fig.contract(t1, l1, t2, l2)
-#c.add_point([1.4, 1.8])
 
-fig.export("mat_vec_mult.pdf", padding = 0)
+fig.export("mat_vec_mult.pdf")
