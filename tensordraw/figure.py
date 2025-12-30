@@ -1,4 +1,5 @@
 import os
+from copy import deepcopy
 
 import cairo
 import numpy as np
@@ -6,7 +7,12 @@ import numpy as np
 from .utils import Position
 from .utils import pos_to_point
 from .utils import rotation
+from .utils import orientation
+from .utils import path_line_intersection
+from .utils import distance_to_point
 from .contraction import Contraction
+from .leg import Leg
+from ._placeable import Placeable
 
 class Figure():
     def __init__(self):
@@ -16,8 +22,8 @@ class Figure():
         # Window limits [xmin, xmax, ymin, ymax]
         self.window = []
 
-    def place(self, obj, x, y, orientation = 0):
-        self.objects.append(obj)
+    def place(self, obj : Placeable, x, y, orientation = 0):
+        self.objects.append(deepcopy(obj))
         self.positions.append(Position(x, y, orientation))
 
         R = rotation(orientation)
@@ -33,7 +39,8 @@ class Figure():
 
         return len(self.objects) - 1
 
-    def contract(self, tensor1_idx, leg1_idx, tensor2_idx, leg2_idx, **kwargs):
+    def _contract_legs(self, tensor1_idx, leg1_idx, tensor2_idx, leg2_idx, 
+                       **kwargs):
         leg1 = self.objects[tensor1_idx].legs[leg1_idx]
         R1 = rotation(self.positions[tensor1_idx].orientation)
         p1 = pos_to_point(self.positions[tensor1_idx])
@@ -54,6 +61,50 @@ class Figure():
 
         self._update_window(*self.contractions[-1].limits())
         return self.contractions[-1]
+
+    def _contract_tensors(self, tensor1_idx, tensor2_idx, **kwargs):
+        tensor1 = self.objects[tensor1_idx]
+        path1 = tensor1.path
+        shift1 = pos_to_point(self.positions[tensor1_idx])
+        centroid1 = shift1 + tensor1.centroid
+        tensor2 = self.objects[tensor2_idx]
+        path2 = tensor2.path
+        shift2 = pos_to_point(self.positions[tensor2_idx])
+        centroid2 = shift2 + tensor2.centroid
+
+        disp12 = centroid2 - centroid1
+        inclination = orientation(disp12)
+        origin = (centroid1 + centroid2)/2
+        origin1 = origin - shift1 
+        origin2 = origin - shift2 
+        res = kwargs.get('res', 1000)
+
+        ts1 = path_line_intersection(path1, origin1, inclination, res)
+        ts2 = path_line_intersection(path2, origin2, inclination, res)
+        t1 = ts1[np.argmin([distance_to_point(t, path1, origin1) for t in ts1])]
+        t2 = ts2[np.argmin([distance_to_point(t, path2, origin2) for t in ts2])]
+
+        base1 = path1(t1)
+        base2 = path2(t2)
+        default_length = np.max([tensor1.stroke_style.width,
+                                 tensor2.stroke_style.width])
+        default_length = np.min([default_length, np.linalg.norm(disp12)/4])
+        leg_lengths = kwargs.get('leg_lengths', [default_length]*2)
+        dir12 = (disp12)/np.linalg.norm(disp12)
+        tip1 = Position(*(base1 + dir12 * leg_lengths[0]), inclination)
+        tip2 = Position(*(base2 - dir12 * leg_lengths[1]), orientation(-dir12))
+
+        leg_kwargs = kwargs.get('leg_kwargs', [{},{}])
+        tensor1.legs.append(Leg(tensor1, tip1, base1, **leg_kwargs[0]))
+        tensor2.legs.append(Leg(tensor2, tip2, base2, **leg_kwargs[1]))
+
+        return self._contract_legs(tensor1_idx, -1, tensor2_idx, -1, **kwargs)
+
+    def contract(self, *args, **kwargs):
+        if(len(args) == 2):
+            return self._contract_tensors(*args, **kwargs)
+        elif(len(args) == 4):
+            return self._contract_legs(*args, **kwargs)
 
     def _update_window(self, xmin, xmax, ymin, ymax):
         self.window[0] = np.min([self.window[0], xmin])

@@ -5,11 +5,12 @@ import numpy as np
 
 from ..stroke_style import StrokeStyle
 from ..fill_style import FillStyle
-from .._drawable import Drawable
+from .._placeable import Placeable
 
-class BaseTensor(Drawable):
+class BaseTensor(Placeable):
     def __init__(self, **kwargs):
         self.legs = []
+        self.centroid = ([0,0])
 
         super().__init__(**kwargs)
 

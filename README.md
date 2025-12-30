@@ -6,11 +6,10 @@ Tensordraw is a Python package for easily creating tensor network diagrams.
 
 Development of the project is ongoing, but it currently features:
 
-1. Tensors as circles or any polygon (rounded corners and holes available)
-2. Tensors legs (indices) in any direction
-3. Customizing stroke and filling styles for all objects
-4. Output in a vectorized format (supports PDF, SVG, PS, and EPS)
-5. Automatic tensor contractions
+* **Flexible geometries:** Tensors as circles or any polygon (rounded corners and holes available) with legs (indices) in any direction.
+* **Easy contractions:** Automated and tunable curves for tensor contractions.
+* **Highly customizable:** Ajust stroke and filling styles for all objects.
+* **Vector output:** Produces fully editable vector outputs (SVG, PDF, PS or EPS) for post-production in tools like Inkscape or Adobe Illustrator.
 
 To be added:
 

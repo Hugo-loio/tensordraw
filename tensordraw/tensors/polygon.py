@@ -44,11 +44,6 @@ class Polygon(BaseTensor):
         if(np.abs(np.sum(self.angles) - (self.nsides-2)*np.pi) > 1E-8):
             raise ValueError("The internal angles of the polygon do not properly add up")
 
-        cx = np.sum((x[:-1] + x[1:])*(x[:-1]*y[1:] - x[1:]*y[:-1]))/(6*self.area)
-        cy = np.sum((y[:-1] + y[1:])*(x[:-1]*y[1:] - x[1:]*y[:-1]))/(6*self.area)
-        # Shift origin to the centroid
-        if kwargs.get('center', True):
-            self.vertices -= np.array([cx,cy])
 
         self.min_length = np.min(self.side_lengths)
         self.diffs = diffs
@@ -63,6 +58,14 @@ class Polygon(BaseTensor):
 
         if 'corner_width' not in kwargs:
             self._compute_rounded_corners()
+
+        cx = np.sum((x[:-1] + x[1:])*(x[:-1]*y[1:] - x[1:]*y[:-1]))/(6*self.area)
+        cy = np.sum((y[:-1] + y[1:])*(x[:-1]*y[1:] - x[1:]*y[:-1]))/(6*self.area)
+        # Shift origin to the centroid
+        if kwargs.get('center', True):
+            self.vertices -= np.array([cx,cy])
+        else:
+            self.centroid = np.array([cx,cy])
 
 
     def _compute_rounded_corners(self):

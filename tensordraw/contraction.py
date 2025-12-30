@@ -75,5 +75,3 @@ class Contraction(Drawable):
     def draw(self, context):
         self.cairo_path(context)
         self.stroke_style.stroke(context)
-
-        #context.squarek

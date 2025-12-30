@@ -1,10 +1,9 @@
 import numpy as np
-from scipy.optimize import minimize
-from scipy.optimize import shgo
 from scipy.signal import argrelmin
 
 from .utils import distance_to_hline
 from .utils import distance_to_point
+from .utils import path_line_intersection
 from ._drawable import Drawable
 
 class Leg(Drawable):
@@ -35,47 +34,24 @@ class Leg(Drawable):
 
     # Find the intersection between the leg's boundaries and the parent tensor path
     def _compute_intersections(self, res, custom_path = None):
-        ts = np.linspace(0,1,res)
-        rot = 0
         path = self.parent.path
         if(custom_path != None):
             path = custom_path
+        inclination = self.tip_position.orientation
 
-        rot = -self.tip_position.orientation
+        ts_left = path_line_intersection(path, self.tipleft(), inclination, res)
+        tleft = ts_left[np.argmin(
+            [distance_to_point(t, path, self.base_point) for t in ts_left])]
 
-        aux_dists = [np.linalg.norm(path(ts[i]) - path(ts[i+1])) for i,_ in enumerate(ts[:-1])]
-        adjacent_dists = np.empty(res)
-        adjacent_dists[0] = aux_dists[0]
-        adjacent_dists[-1] = aux_dists[-1]
-        adjacent_dists[1:-1] = np.max([aux_dists[:-1], aux_dists[1:]], axis = 0)
-
-        # Compute left intersection
-        origin_left = self.tipleft()
-        dists_left = np.array([distance_to_hline(t, path, origin_left, rot) for t in ts])
-        argmins = argrelmin(dists_left, mode = 'wrap')[0]
-        dists_min = dists_left[argmins]
-        argmins = argmins[dists_min < adjacent_dists[argmins]]
-        if(len(argmins) == 0):
-            raise RuntimeError("Intersection of leg with tensor not found")
-        tleft = ts[argmins[np.argmin([distance_to_point(t, path, self.base_point) for t in ts[argmins]])]]
-
-        # Compute right intersection
-        origin_right = self.tipright()
-        dists_right = np.array([distance_to_hline(t, path, origin_right, rot) for t in ts])
-        argmins = argrelmin(dists_right, mode = 'wrap')[0]
-        dists_min = dists_right[argmins]
-        argmins = argmins[dists_min < adjacent_dists[argmins]]
-        if(len(argmins) == 0):
-            raise RuntimeError("Intersection of leg with tensor not found")
-        tright = ts[argmins[np.argmin([distance_to_point(t, path, self.base_point) for t in ts[argmins]])]]
-
+        ts_right = path_line_intersection(path, self.tipright(), inclination, res)
+        tright = ts_right[np.argmin(
+            [distance_to_point(t, path, self.base_point) for t in ts_right])]
         return tleft, tright
 
     '''
-        TODO: a better minimization method to improve resolution
-        Find the global minimum once with an error and then perform the same algorithm within that error
+        TODO: a better minimization method to improve resolution and speed
         If there are simple equations for each of the path segments of the tensors then the intersection points could be found analytically
-        For now we have something that works so let's rather leave this for later
+        For now we have something that works so let's leave this for later
     '''
 
     def draw(self, context):
