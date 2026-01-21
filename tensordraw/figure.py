@@ -149,31 +149,40 @@ class Figure():
     def _surface(self, path, fig_width, fig_height, padding):
         ext = os.path.splitext(path)[1].lower()
 
+        total_w = fig_width + 2*padding
+        total_h = fig_height + 2*padding
+
         if ext == ".svg":
-            return cairo.SVGSurface(path, fig_width + 2*padding, 
-                                    fig_height + 2*padding)
-        
+            return cairo.SVGSurface(path, total_w, total_h)
         elif ext == ".pdf":
-            return cairo.PDFSurface(path, fig_width + 2*padding, 
-                                    fig_height + 2*padding)
+            return cairo.PDFSurface(path, total_w, total_h)
         elif ext in [".ps", ".eps"]:
-            return cairo.PSSurface(path, fig_width + 2*padding,
-                                   fig_height + 2*padding)
+            return cairo.PSSurface(path, total_w, total_h)
+        elif ext == ".png":
+                return cairo.ImageSurface(cairo.FORMAT_ARGB32, 
+                                          int(np.ceil(total_w)),
+                                          int(np.ceil(total_h)))
         else:
             raise ValueError(f"Unsupported format '{ext}'")
 
     def export(self, path, fig_width = 400, padding = 4, **kwargs):
         window_width = self.window[1] - self.window[0]
         window_height = self.window[3] - self.window[2]
-        window_ratio = window_width/window_height
+        window_ratio = kwargs.get('fig_ratio', window_width/window_height)
 
-        fig_height = np.ceil(fig_width/window_ratio)
+        #fig_height = np.ceil(fig_width/window_ratio)
+        fig_height = fig_width/window_ratio
         padding = np.floor(2*padding)/2
         surface = self._surface(path, fig_width, fig_height, padding)
         context = cairo.Context(surface)
 
         context.translate(padding, padding)  
-        context.scale(fig_width/window_width, fig_height/window_height)
+        rescale = fig_width/window_width
+        if(window_width/window_height < window_ratio):
+            rescale = fig_height/window_height
+        context.scale(rescale, rescale)
+        #context.scale(fig_width/window_width, 
+        #              fig_height*window_ratio/window_width)
 
         #Flip the y direction
         context.translate(0, window_height)  
@@ -192,6 +201,10 @@ class Figure():
         for contraction in self.contractions:
             contraction.draw(context)
         context.restore()
+
+        ext = os.path.splitext(path)[1].lower()
+        if ext == ".png":
+            surface.write_to_png(path)
 
         #context.pop_group_to_source()
         #context.paint()
