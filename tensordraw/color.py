@@ -1,3 +1,5 @@
+import numpy as np
+
 DEFAULT_COLORS = {
         'blue' : (0,0,1),
         'green' : (0,0.72,0.08),
@@ -6,6 +8,8 @@ DEFAULT_COLORS = {
         'orange' : (0.949, 0.573, 0.098),
         'purple' : (0.58,0,1),
         'teal' : (0,1,0.89),
+        'white' : (1,1,1),
+        'black' : (0,0,0),
         'transparent' : (0,0,0,0)
         }
 

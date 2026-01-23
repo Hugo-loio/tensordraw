@@ -127,23 +127,24 @@ class Figure():
 
     #def draw_contraction(self, contraction, context)
 
-    def _draw_boundary(self, context, window_height, window_width):
+    def _draw_boundary(self, context, fig_height, fig_width, rescale):
+        right, up = fig_width/rescale, fig_height/rescale
         context.move_to(0,0)
         context.set_source_rgba(1,0,0)
-        context.set_line_width(window_height/100)
-        context.line_to(window_width,0)
+        context.set_line_width(np.min([right, up])/100)
+        context.line_to(right,0)
         context.stroke()
-        context.move_to(0,window_height)
+        context.move_to(0,up)
         context.set_source_rgba(0,0,1)
-        context.line_to(window_width,window_height)
+        context.line_to(right, up)
         context.stroke()
         context.move_to(0,0)
         context.set_source_rgba(0,1,0)
-        context.line_to(0,window_height)
+        context.line_to(0,up)
         context.stroke()
-        context.move_to(window_width,0)
+        context.move_to(right,0)
         context.set_source_rgba(1,0.7,0)
-        context.line_to(window_width,window_height)
+        context.line_to(right, up)
         context.stroke()
 
     def _surface(self, path, fig_width, fig_height, padding):
@@ -181,8 +182,6 @@ class Figure():
         if(window_width/window_height < window_ratio):
             rescale = fig_height/window_height
         context.scale(rescale, rescale)
-        #context.scale(fig_width/window_width, 
-        #              fig_height*window_ratio/window_width)
 
         #Flip the y direction
         context.translate(0, window_height)  
@@ -191,7 +190,7 @@ class Figure():
         #context.push_group()
 
         if kwargs.get('show_boundary', False):
-            self._draw_boundary(context, window_height, window_width)
+            self._draw_boundary(context, fig_height, fig_width, rescale)
 
         for i,obj in enumerate(self.objects):
             self.draw_obj(obj, self.positions[i], context)
