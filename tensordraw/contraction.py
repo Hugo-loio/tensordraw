@@ -8,22 +8,28 @@ class Contraction(Drawable):
                  leg2_tip, leg2_base, **kwargs):
         self.fig = fig
 
-        dir_leg1 = leg1_tip - leg1_base
-        dir_leg2 = leg2_tip - leg2_base
+        leg1_disp = leg1_tip - leg1_base
+        leg2_disp = leg2_tip - leg2_base
+        leg1_len  = np.linalg.norm(leg1_disp)
+        leg2_len  = np.linalg.norm(leg2_disp)
+        leg1_dir  = leg1_disp / leg1_len
+        leg2_dir  = leg2_disp / leg2_len
+        tip_dist  = np.linalg.norm(leg1_tip - leg2_tip)
+
+        k1 = np.max([leg1_len, tip_dist*(2/5)])
+        k2 = np.max([leg2_len, tip_dist*(2/5)])
 
         self.points = []
-        self.points.append(leg1_base + 0.9*dir_leg1) # initial straight point
-        self.points.append(leg1_tip)                 # initial curve point
-        self.points.append(leg1_tip + dir_leg1)      # initial control point
-        self.points.append(leg2_tip + dir_leg2)      # final control point
-        self.points.append(leg2_tip)                 # final curve point
-        self.points.append(leg2_base + 0.9*dir_leg2) # final straight point
+        self.points.append(leg1_base + 0.9*leg1_disp) # initial straight point
+        self.points.append(leg1_tip)                  # initial curve point
+        self.points.append(leg1_tip + k1 * leg1_dir)  # initial control point
+        self.points.append(leg2_tip + k2 * leg2_dir)  # final control point
+        self.points.append(leg2_tip)                  # final curve point
+        self.points.append(leg2_base + 0.9*leg2_disp) # final straight point
 
         if 'handle_lengths' in kwargs:
-            dir_leg1 /= np.linalg.norm(dir_leg1)
-            dir_leg2 /= np.linalg.norm(dir_leg2)
-            self.points[2] = leg1_tip + kwargs['handle_lengths'][0] * dir_leg1
-            self.points[3] = leg2_tip + kwargs['handle_lengths'][1] * dir_leg2
+            self.points[2] = leg1_tip + kwargs['handle_lengths'][0] * leg1_dir
+            self.points[3] = leg2_tip + kwargs['handle_lengths'][1] * leg2_dir
 
         super().__init__(**kwargs)
 

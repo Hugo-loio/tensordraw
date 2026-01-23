@@ -19,6 +19,7 @@ class Figure():
         self.objects = []
         self.positions = []
         self.contractions = []
+        self.draw_order = [] # Order of drawing type (tensor or contraction)
         # Window limits [xmin, xmax, ymin, ymax]
         self.window = []
 
@@ -37,6 +38,7 @@ class Figure():
         else:
             self._update_window(xmin, xmax, ymin, ymax)
 
+        self.draw_order.append("object")
         return len(self.objects) - 1
 
     def _contract_legs(self, tensor1_idx, leg1_idx, tensor2_idx, leg2_idx, 
@@ -60,11 +62,16 @@ class Figure():
                                              leg2_tip, leg2_base, **kwargs))
 
         self._update_window(*self.contractions[-1].limits())
+        self.draw_order.append("contraction")
         return self.contractions[-1]
 
+    # TODO: Doesn't work with rotated tensors!
     def _contract_tensors(self, tensor1_idx, tensor2_idx, **kwargs):
         tensor1 = self.objects[tensor1_idx]
         path1 = tensor1.path
+        #R1 = rotation(self.positions[tensor1_idx].orientation)
+        #def path1(t):
+        #    return R1 @ tensor1.path(t)
         shift1 = pos_to_point(self.positions[tensor1_idx])
         centroid1 = shift1 + tensor1.centroid
         tensor2 = self.objects[tensor2_idx]
@@ -192,14 +199,19 @@ class Figure():
         if kwargs.get('show_boundary', False):
             self._draw_boundary(context, fig_height, fig_width, rescale)
 
-        for i,obj in enumerate(self.objects):
-            self.draw_obj(obj, self.positions[i], context)
+        i1, i2 = 0, 0
+        for draw_type in self.draw_order:
+            if(draw_type == "object"):
+                self.draw_obj(self.objects[i1], self.positions[i1], context)
+                i1 += 1
+            elif(draw_type == "contraction"):
+                context.save()
+                context.translate(-self.window[0], -self.window[2])
+                self.contractions[i2].draw(context)
+                context.restore()
+                i2 += 1
 
-        context.save()
-        context.translate(-self.window[0], -self.window[2])
-        for contraction in self.contractions:
-            contraction.draw(context)
-        context.restore()
+
 
         ext = os.path.splitext(path)[1].lower()
         if ext == ".png":
